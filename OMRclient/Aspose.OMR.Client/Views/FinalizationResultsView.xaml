@@ -1,0 +1,24 @@
+﻿<Window x:Class="Aspose.OMR.Client.Views.FinalizationResultsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:Aspose.OMR.Client.Views"
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Title="Finalization Results" Height="450" Width="350"
+        Icon="/Icons/Polling.png">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <TextBlock TextWrapping="Wrap" Margin="10"
+            Text="This is recognition results for template image recieved during finalization stage. Please make sure this results are correct."/>
+        <views:AnswersView Grid.Row="1"/>
+        
+        <Button Content="Ok" Grid.Row="2"  HorizontalAlignment="Center" Height="25" Width="60" Margin="5"
+                Command="{Binding OkCommand}"></Button>
+    </Grid>
+</Window>
