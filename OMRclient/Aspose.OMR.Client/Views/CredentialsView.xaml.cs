@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace Aspose.OMR.Client.Views
 {
+    using System.Diagnostics;
     using System.Windows;
+    using System.Windows.Navigation;
     using ViewModels;
 
     /// <summary>
@@ -27,6 +30,12 @@ namespace Aspose.OMR.Client.Views
         {
             this.InitializeComponent();
             this.DataContext = context;
+        }
+
+        private void OnCloudNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
         }
     }
 }

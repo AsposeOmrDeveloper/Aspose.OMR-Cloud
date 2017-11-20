@@ -36,6 +36,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>OMR.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Aspose.Storage-Cloud, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Aspose.Storage-Cloud.1.0.10\lib\Aspose.Storage-Cloud.dll</HintPath>
@@ -269,6 +272,9 @@
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
+    <Content Include="Examples\AsposeTestExamples\Template.omr">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -384,6 +390,25 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icons\AsposeOMR.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="OMR.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Examples\AsposeTestExample.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Examples\AsposeTestExamples\FilledForm1.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Examples\AsposeTestExamples\FilledForm2.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Examples\AsposeTestExamples\FilledForm3.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
