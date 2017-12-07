@@ -52,6 +52,69 @@ It is quite easy to use OMR in your projects. All you need to do is:
 
 Check [Console Client](https://github.com/asposecloud/Aspose.OMR-Cloud/tree/master/ConsoleClient) solution for a simple demonstration of how OMR functions can be called from your code.
 
+## How does it work?
+
+Simply prepare your questions with our simple markup language. Below you can see survey example.
+
+<sub>
+
+
+```
+?image=LogoImage1.jpg
+	align=left
+
+
+?text=Name__________________________________              Date____________
+
+#What is Aspose.OMR main function?
+	() OCR () Capture human-marked data
+	() There is no main function () Enhance images
+#Can Aspose.OMR process not only scans, but also photos?
+	() Yes, indeed! () No
+#Aspose.OMR is available on any platform, because it is:
+	() Cross-platform code () Cloud service
+#Aspose.OMR works with any kind of OMR forms: tests, exams, questionnaires, surveys, etc.
+	() Yes, indeed! () No
+...
+
+?text=						Answer sheet section
+
+?answer_sheet=MainQuestions
+	elements_count=50
+	columns_count=5
+
+?text=Sign________________________________
+
+?image=LogoImage2.png
+	align=right
+```
+</sub>
+
+## What do you get?
+
+You’ll get a nice and sharp survey ready to print!
+
+<img src="TestFiles/Demonstration/GeneratedImage.png" width=400>
+
+ETA: December 2017
+
+## What is next?
+
+Simply make mobile snapshots or scan filled forms, upload them into OMR.Client or call API and you have the results!
+
+<img src="TestFiles/Demonstration/AsposePhoto.jpg"> <img src="TestFiles/Demonstration/AsposeRecognition.jpg">
+
+
+## Roadmap
+In the upcoming releases, we are set to implement a number of new features:
+
+ - support diverse interviewee’s marks (ticks, crosses, corrections, etc) on various forms with the use of neural networks;
+ - simplify OMR form preparation by introducing an easy markup language. For example, to get the particular survey form ready you only need to provide questions and answers;
+ - reduce your expenses by preprocessing and compressing your images;
+ - enhance the client with plugins to provide additional functionality;
+ - present standalone script for batch processing in Python.
+
+
 
 
 ## Resources
