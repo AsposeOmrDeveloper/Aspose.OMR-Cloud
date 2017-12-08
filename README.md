@@ -102,7 +102,7 @@ ETA: December 2017
 
 Simply make mobile snapshots or scan filled forms, upload them into OMR.Client or call API and you have the results!
 
-<img src="TestFiles/Demonstration/AsposePhoto.jpg"> <img src="TestFiles/Demonstration/AsposeRecognition.jpg"> <img src="TestFiles/Demonstration/Answers.png" height=250>
+<img src="TestFiles/Demonstration/AsposePhoto.jpg" height=300> <img src="TestFiles/Demonstration/AsposeRecognition.jpg" height=300> <img src="TestFiles/Demonstration/Answers.png" height=300>
 
 
 ## Roadmap
