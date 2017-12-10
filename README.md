@@ -1,4 +1,4 @@
-<img src="TestFiles/Demonstration/OmrBanner.png" height=300>
+<img src="TestFiles/Demonstration/OmrBanner.png">
 
 
 
