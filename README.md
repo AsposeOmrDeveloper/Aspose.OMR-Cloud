@@ -1,6 +1,6 @@
-<div align="left">
-  <img src="https://www.aspose.cloud/templates/aspose/App_Themes/V3/images/omr/272x272/aspose_omr-for-cloud.png"><br><br>
-</div>
+<img src="TestFiles/Demonstration/OmrBanner.png" height=300>
+
+
 
 # Aspose.OMR for Cloud
 
@@ -13,7 +13,7 @@ Developers can embed optical recognition in any type of application to extract d
 
 The repository contains sample applications that demonstrate how to perform common OMR with Aspose.OMR API.
 <p align="center">
-  <a href="https://github.com/aspose-omr/Aspose.OMR-for-Cloud/archive/master.zip">
+  <a href="https://github.com/asposecloud/Aspose.OMR-Cloud/archive/master.zip">
     <img src="http://i.imgur.com/hwNhrGZ.png" />
   </a>
 </p>
