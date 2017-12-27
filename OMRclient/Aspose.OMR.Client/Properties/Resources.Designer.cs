@@ -70,7 +70,7 @@ namespace Aspose.OMR.Client.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 17.10.
+        ///   Looks up a localized string similar to 17.12.
         /// </summary>
         public static string Version {
             get {

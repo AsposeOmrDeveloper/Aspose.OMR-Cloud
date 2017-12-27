@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ namespace Aspose.OMR.Client.Controls
     using System.Windows.Documents;
     using System.Windows.Input;
     using System.Windows.Media;
+    using Utility;
 
     /// <summary>
     /// Adorner used for rubberband selection within canvas (i.e. drag rectangle)
@@ -57,7 +58,7 @@ namespace Aspose.OMR.Client.Controls
         /// <param name="canvas">Parent canvas</param>
         /// <param name="dragStartPoint">Dragging start point</param>
         /// <param name="mode">Mode of selection rectangle</param>
-        public RubberbandAdorner(CustomCanvas canvas, Point? dragStartPoint, SelectionRectnagleModes mode) : base(canvas)
+        public RubberbandAdorner(CustomCanvas canvas, Point? dragStartPoint, SelectionRectangleModes mode) : base(canvas)
         {
             this.canvas = canvas;
             this.startPoint = dragStartPoint;
@@ -65,21 +66,21 @@ namespace Aspose.OMR.Client.Controls
             // choose color and selection behaviour based on mode
             switch (mode)
             {
-                case SelectionRectnagleModes.Selection:
+                case SelectionRectangleModes.Selection:
                 {
                     this.rubberandBrush = (Brush) Application.Current.FindResource("SelectionBrush");
                     this.toSelect = true;
                     break;
                 }
 
-                case SelectionRectnagleModes.ChoiceBox:
+                case SelectionRectangleModes.ChoiceBox:
                 {
                     this.rubberandBrush = (Brush) Application.Current.FindResource("MainItemsBrush");
                     this.toSelect = false;
                     break;
                 }
 
-                case SelectionRectnagleModes.Grid:
+                case SelectionRectangleModes.Grid:
                 {
                     this.rubberandBrush = (Brush)Application.Current.FindResource("MainItemsBrush");
                         this.toSelect = false;

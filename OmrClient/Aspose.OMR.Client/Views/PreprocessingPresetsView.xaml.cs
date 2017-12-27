@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,26 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Aspose.OMR.Client
+namespace Aspose.OMR.Client.Views
 {
+    using System.Linq;
+    using System.Windows;
+    using ViewModels;
+
     /// <summary>
-    /// Modes for selection rectangle
+    /// Interaction logic for PreprocessingPresetsView.xaml
     /// </summary>
-    public enum SelectionRectnagleModes
+    public partial class PreprocessingPresetsView : Window
     {
-        /// <summary>
-        /// Simple elements selection
-        /// </summary>
-        Selection,
-
-        /// <summary>
-        /// Create new element, choice box
-        /// </summary>
-        ChoiceBox,
-
-        /// <summary>
-        /// Create new element, grid
-        /// </summary>
-        Grid,
+        public PreprocessingPresetsView(PreprocessingPresetsViewModel context)
+        {
+            this.InitializeComponent();
+            this.DataContext = context;
+            this.Owner = Application.Current.Windows.OfType<MainWindow>().First();
+        }
     }
 }

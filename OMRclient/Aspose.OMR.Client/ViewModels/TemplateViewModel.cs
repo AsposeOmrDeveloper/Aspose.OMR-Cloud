@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ namespace Aspose.OMR.Client.ViewModels
     using System.ComponentModel;
     using System.IO;
     using System.Text;
+    using System.Threading.Tasks;
     using System.Linq;
     using System.Windows;
     using System.Windows.Media.Imaging;
@@ -71,6 +72,11 @@ namespace Aspose.OMR.Client.ViewModels
         private bool isAddingGrid;
 
         /// <summary>
+        /// Indicates that template correction has been done
+        /// </summary>
+        private bool correctionComplete;
+
+        /// <summary>
         /// Indicates that template finalization was complete with no warnings
         /// </summary>
         private bool finalizationComplete;
@@ -100,33 +106,246 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         private double pageHeight;
 
+        /// <summary>
+        /// Help message containing various useful information displayed at lower toolbar
+        /// </summary>
+        private string helpMessage;
+
+        /// <summary>
+        /// Current template creation workflow stage
+        /// </summary>
+        private TemplateCreationStages currentStage;
+
+        /// <summary>
+        /// Indicates whether to display properties panel
+        /// </summary>
+        private bool showPropertiesPanel = true;
+
+        /// <summary>
+        /// Width of the properties column
+        /// </summary>
+        private double propertiesPanelWidth = 220;
+
+        /// <summary>
+        /// Remembered properties width (that might be set by the user) to restore panel in right size
+        /// </summary>
+        private double savedPropertiesWidth;
+
+        /// <summary>
+        /// Template Name
+        /// </summary>
+        private string templateName;
+
+        /// <summary>
+        /// Indicated whether template validation can be done
+        /// </summary>
+        private bool canValidate;
+
+        /// <summary>
+        /// Indicated whether template validation has failed
+        /// </summary>
+        private bool validationFailed;
+
+        /// <summary>
+        /// Minimum width on the properties pane in closed state.
+        /// </summary>
+        private const double PropertiesPanelClosedWidth = 24d;
+
+        /// <summary>
+        /// Static zoom koefficient value for better representation of large images (values from 0 to 1)
+        /// </summary>
+        private static double zoomKoefficient = 1;
+
         #endregion
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplateViewModel"/> class.
         /// </summary>
-        /// <param name="tabName">The tab name</param>
-        public TemplateViewModel(string tabName)
+        /// <param name="finalizationComplete">Flag indicating that template is finalized</param>
+        /// <param name="templateId">Template identifier string</param>
+        public TemplateViewModel(bool finalizationComplete, string templateId)
         {
-            this.TabName = tabName;
-
             this.Warnings = new ObservableCollection<string>();
             this.pageQuestions = new ObservableCollection<BaseQuestionViewModel>();
             this.selectedElements = new ObservableCollection<BaseQuestionViewModel>();
             this.copiedQuestionsBuffer = new ObservableCollection<BaseQuestionViewModel>();
 
-            ZoomKoefficient = 1;
             this.zoomLevel = 1;
 
             this.InitCommands();
+
+            this.TemplateId = templateId;
+            this.FinalizationComplete = finalizationComplete;
+
+            this.CorrectionComplete = !string.IsNullOrEmpty(this.TemplateId);
+            this.CanValidate = !this.FinalizationComplete;
+            this.IsDirty = false;
+
+            this.UpdateTemplateCreationStage();
         }
 
         #region Properties
 
         /// <summary>
+        /// Gets or sets a value indicating whether template was generated
+        /// </summary>
+        public bool IsGeneratedTemplate { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether template validation failed
+        /// </summary>
+        public bool ValidationFailed
+        {
+            get { return this.validationFailed; }
+            private set
+            {
+                this.validationFailed = value;
+                this.UpdateTemplateCreationStage();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether template correction is complete with no errors
+        /// </summary>
+        public bool CorrectionComplete
+        {
+            get { return this.correctionComplete; }
+            set
+            {
+                if (this.correctionComplete != value)
+                {
+                    this.IsDirty = true;
+                }
+
+                this.correctionComplete = value;
+                this.OnPropertyChanged();
+                this.UpdateTemplateCreationStage();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether template finalization is complete with no warnings
+        /// </summary>
+        public bool FinalizationComplete
+        {
+            get { return this.finalizationComplete; }
+            set
+            {
+                if (this.finalizationComplete != value)
+                {
+                    this.IsDirty = true;
+                }
+
+                this.finalizationComplete = value;
+                this.OnPropertyChanged();
+                this.UpdateTemplateCreationStage();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the path that template was loaded from
+        /// </summary>
+        public string LoadedPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the width of the properties panel
+        /// </summary>
+        public double PropertiesPanelWidth
+        {
+            get { return this.propertiesPanelWidth; }
+            set
+            {
+                this.propertiesPanelWidth = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether properties panel should be displayed
+        /// </summary>
+        public bool ShowPropertiesPanel
+        {
+            get { return this.showPropertiesPanel; }
+            set
+            {
+                this.showPropertiesPanel = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
         /// Gets or sets zoom koefficient for better representation of large images (values from 0 to 1)
         /// </summary>
-        public static double ZoomKoefficient { get; set; }
+        public static double ZoomKoefficient
+        {
+            get
+            {
+                return zoomKoefficient;
+            }
+            set
+            {
+                zoomKoefficient = value;
+            }
+        }
+
+        /// <summary>
+        /// Updates workflow stage depending on various conditions
+        /// </summary>
+        private void UpdateTemplateCreationStage()
+        {
+            if (this.TemplateImage == null)
+            {
+                this.CurrentStage = TemplateCreationStages.NoImage;
+            }
+            else if (this.PageQuestions.Count == 0)
+            {
+                this.CurrentStage = TemplateCreationStages.NoElements;
+            }
+            else if (this.PageQuestions.Count < 3)
+            {
+                this.CurrentStage = TemplateCreationStages.WorkWithElements;
+            }
+            else if (string.IsNullOrEmpty(this.TemplateId))
+            {
+                this.CurrentStage = TemplateCreationStages.NoValidation;
+            }
+            else if (this.ValidationFailed || (!string.IsNullOrEmpty(this.TemplateId) && !this.FinalizationComplete))
+            {
+                this.CurrentStage = TemplateCreationStages.ValidatedWithErrors;
+            }
+            else if (this.FinalizationComplete)
+            {
+                this.CurrentStage = TemplateCreationStages.ValidatedWithNoErrors;
+            }
+        }
+
+        /// <summary>
+        /// Gets current template creation stage
+        /// </summary>
+        public TemplateCreationStages CurrentStage
+        {
+            get { return this.currentStage; }
+            private set
+            {
+                this.currentStage = value;
+
+                // update help message
+                this.HelpMessage = HelpManager.GetMessageByStage(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the help message displayed at lower toolbar
+        /// </summary>
+        public string HelpMessage
+        {
+            get { return this.helpMessage; }
+            set
+            {
+                this.helpMessage = value;
+                this.OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Gets or sets the template id used by omr core
@@ -137,7 +356,7 @@ namespace Aspose.OMR.Client.ViewModels
             set
             {
                 this.templateId = value;
-                this.FinalizeTemplateCommand.RaiseCanExecuteChanged();
+                this.UpdateTemplateCreationStage();
             }
         }
 
@@ -199,19 +418,6 @@ namespace Aspose.OMR.Client.ViewModels
                     this.IsAddingChoiceBox = false;
                 }
 
-                this.OnPropertyChanged();
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether template finalization was complete with no warnings
-        /// </summary>
-        public bool FinalizationComplete
-        {
-            get { return this.finalizationComplete; }
-            set
-            {
-                this.finalizationComplete = value;
                 this.OnPropertyChanged();
             }
         }
@@ -352,9 +558,54 @@ namespace Aspose.OMR.Client.ViewModels
         public string TemplateImageName { get; set; }
 
         /// <summary>
+        /// Gets or sets the template name
+        /// </summary>
+        public string TemplateName
+        {
+            get { return this.templateName; }
+            set
+            {
+                this.templateName = value;
+                this.TabName = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets image file format
         /// </summary>
         public string ImageFileFormat { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether template can be validated
+        /// </summary>
+        public bool CanValidate
+        {
+            get
+            {
+                if (this.PageQuestions.Count == 0)
+                {
+                    return false;
+                }
+
+                return this.canValidate;
+            }
+            set
+            {
+                this.canValidate = value;
+                this.OnPropertyChanged();
+                this.ValidateTemplateCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        /// <summary>
+        /// Finalization approved delegate
+        /// </summary>
+        public delegate void FinalizationApprovedDelegate();
+
+        /// <summary>
+        /// Fires when finalization results are approved by user
+        /// </summary>
+        public event FinalizationApprovedDelegate FinalizationApproved;
 
         #region Commands
 
@@ -362,15 +613,9 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand DropPageImageCommand { get; private set; }
 
-        public RelayCommand SaveTemplateCommand { get; private set; }
-
         public RelayCommand SelectAllElementsCommand { get; private set; }
 
-        public RelayCommand CorrectTemplateCommand { get; private set; }
-
-        public RelayCommand FinalizeTemplateCommand { get; private set; }
-
-        public RelayCommand AddQuestionDebugCommand { get; private set; }
+        public RelayCommand ValidateTemplateCommand { get; private set; }
 
         public RelayCommand CopyElementsCommand { get; private set; }
 
@@ -406,6 +651,12 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand MoveElementsVertical { get; private set; }
 
+        public RelayCommand RenameGroupCommand { get; private set; }
+
+        public RelayCommand ShowPropertiesCommand { get; private set; }
+
+        public RelayCommand HidePropertiesCommand { get; private set; }
+
         #endregion
 
         #endregion
@@ -424,12 +675,12 @@ namespace Aspose.OMR.Client.ViewModels
         /// <summary>
         /// Adds group of questions to the template
         /// </summary>
-        /// <param name="questions">Questinos to add</param>
+        /// <param name="questions">Questions to add</param>
         public void AddQuestions(IEnumerable<BaseQuestionViewModel> questions)
         {
             foreach (BaseQuestionViewModel question in questions)
             {
-                this.OnAddQuestion(question);
+                this.OnAddQuestion(question, false);
             }
         }
 
@@ -454,7 +705,7 @@ namespace Aspose.OMR.Client.ViewModels
                 this.IsAddingGrid = false;
             }
 
-            this.OnAddQuestion(newQuestion);
+            this.OnAddQuestion(newQuestion, true);
             newQuestion.IsSelected = true;
 
             ActionTracker.TrackAction(new AddElementsAction(new[] { newQuestion }, this.PageQuestions));
@@ -490,22 +741,28 @@ namespace Aspose.OMR.Client.ViewModels
         /// Loads template image located by specified path
         /// </summary>
         /// <param name="path">Path to image</param>
-        private void LoadTemplateImageFromFile(string path)
+        public bool LoadTemplateImageFromFile(string path)
         {
             double monitorWidth, monitorHeight;
             ResolutionUtility.GetMonitorResolution(out monitorWidth, out monitorHeight);
 
             FileInfo fileInfo = new FileInfo(path);
+            if (!fileInfo.Exists)
+            {
+                DialogManager.ShowErrorDialog("Failed to load template image by path: " + path);
+                return false;
+            }
+
             this.ImageSizeInBytes = fileInfo.Length;
             this.TemplateImageName = fileInfo.Name;
             this.ImageFileFormat = fileInfo.Extension;
 
             if (!ResolutionUtility.CheckImageSize(fileInfo))
             {
-                return;
+                return false;
             }
 
-            this.TemplateImage = new BitmapImage(new Uri("file://" + path));
+            this.TemplateImage = this.LoadImageNoLock(path);
 
             if (this.TemplateImage.PixelWidth < 1200 || this.TemplateImage.PixelHeight < 1700)
             {
@@ -517,6 +774,36 @@ namespace Aspose.OMR.Client.ViewModels
                 : 1;
 
             this.OnPropertyChanged(nameof(this.PageScale));
+            this.UpdateTemplateCreationStage();
+
+            if (this.PageQuestions.Any())
+            {
+                this.IsDirty = true;
+                this.CanValidate = true;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Load image without lock
+        /// </summary>
+        /// <param name="path">Path to the image</param>
+        /// <returns>Loaded bitmap image</returns>
+        private BitmapImage LoadImageNoLock(string path)
+        {
+            var bitmap = new BitmapImage();
+            var stream = File.OpenRead(path);
+
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+
+            stream.Close();
+            stream.Dispose();
+
+            return bitmap;
         }
 
         /// <summary>
@@ -538,17 +825,27 @@ namespace Aspose.OMR.Client.ViewModels
             ActionTracker.TrackAction(new RemoveElementsAction(removedElements, this.PageQuestions));
 
             this.OnPropertyChanged(nameof(this.PropertiesContext));
+            this.IsDirty = true;
+            this.CanValidate = true;
         }
 
         /// <summary>
         /// Add element to page elements collection
         /// </summary>
         /// <param name="question">Element to add</param>
-        private void OnAddQuestion(BaseQuestionViewModel question)
+        /// <param name="markAsDirty">Mark template as dirty after adding question</param>
+        private void OnAddQuestion(BaseQuestionViewModel question, bool markAsDirty)
         {
             // subscribe to property changed to track selection changes
             question.PropertyChanged += this.ElementPropertyChanged;
             this.PageQuestions.Add(question);
+
+            if (markAsDirty)
+            {
+                this.UpdateTemplateCreationStage();
+                this.IsDirty = true;
+                this.CanValidate = true;
+            }
         }
 
         /// <summary>
@@ -573,6 +870,20 @@ namespace Aspose.OMR.Client.ViewModels
 
                 this.OnPropertyChanged(nameof(this.PropertiesContext));
             }
+            else if (e.PropertyName == nameof(ChoiceBoxViewModel.SelectedMapping) ||
+                     e.PropertyName == nameof(BaseQuestionViewModel.Name) ||
+                     e.PropertyName == nameof(ChoiceBoxViewModel.BubblesCount) ||
+                     e.PropertyName == nameof(GridViewModel.SelectedMapping) ||
+                     e.PropertyName == nameof(GridViewModel.OptionsCount) ||
+                     e.PropertyName == nameof(GridViewModel.SectionsCount) ||
+                     e.PropertyName == nameof(GridViewModel.Width) ||
+                     e.PropertyName == nameof(GridViewModel.Height) ||
+                     e.PropertyName == nameof(GridViewModel.Top) ||
+                     e.PropertyName == nameof(GridViewModel.Left))
+            {
+                this.IsDirty = true;
+                this.CanValidate = true;
+            }
         }
 
         /// <summary>
@@ -585,10 +896,8 @@ namespace Aspose.OMR.Client.ViewModels
             this.LoadTemplateImageCommand = new RelayCommand(x => this.OnLoadTemplateImage());
             this.DropPageImageCommand = new RelayCommand(x => this.LoadTemplateImageFromFile((string) x));
             this.SelectAllElementsCommand = new RelayCommand(x => this.OnSelectAllElements(), x => this.PageQuestions.Any());
-            this.SaveTemplateCommand = new RelayCommand(x => this.OnSaveTemplate(), x => this.PageQuestions.Any());
 
-            this.CorrectTemplateCommand = new RelayCommand(x => this.OnCorrectTemplate(), x => this.PageQuestions.Any());
-            this.FinalizeTemplateCommand = new RelayCommand(x => this.OnFinilizeTemplate(), x => !string.IsNullOrEmpty(this.TemplateId));
+            this.ValidateTemplateCommand = new RelayCommand(x => this.OnValidateTemplate(), x => this.CanValidate);
 
             this.CopyElementsCommand = new RelayCommand(x => this.OnCopyQuestions(), x => this.SelectedElements.Any());
 
@@ -618,6 +927,20 @@ namespace Aspose.OMR.Client.ViewModels
 
             this.MoveElementsHorizontal = new RelayCommand(x => this.OnMoveElementsHorizontal((double)x), x => this.SelectedElements.Count > 0);
             this.MoveElementsVertical = new RelayCommand(x => this.OnMoveElementsVertical((double)x), x => this.SelectedElements.Count > 0);
+
+            this.RenameGroupCommand = new RelayCommand(x => new GroupRenameViewModel(this.SelectedElements), x => this.SelectedElements.Count > 1);
+
+            this.ShowPropertiesCommand = new RelayCommand(x =>
+            {
+                this.ShowPropertiesPanel = true;
+                this.PropertiesPanelWidth = this.savedPropertiesWidth;
+            });
+            this.HidePropertiesCommand = new RelayCommand(x =>
+            {
+                this.ShowPropertiesPanel = false;
+                this.savedPropertiesWidth = this.PropertiesPanelWidth;
+                this.PropertiesPanelWidth = PropertiesPanelClosedWidth;
+            });
         }
 
         /// <summary>
@@ -679,101 +1002,129 @@ namespace Aspose.OMR.Client.ViewModels
         }
 
         /// <summary>
+        /// Validates template by perfoming correction and finalization
+        /// </summary>
+        private async void OnValidateTemplate()
+        {
+            this.FinalizationComplete = false;
+
+            await this.RunCorrection();
+
+            if (this.PageQuestions.Any(x => x.IsValid == false))
+            {
+                CorrectionErrorsViewModel vm = new CorrectionErrorsViewModel();
+                if (!vm.ForceValidation)
+                {
+                    return;
+                }
+
+                // if force validation, mark correction as completed and continue
+                this.CorrectionComplete = true;
+            }
+
+            if (this.CorrectionComplete)
+            {
+                await this.FinilizeTemplateAsync();
+            }
+
+            // if validation is fully complete, disable validation until any changes to template are made
+            if (this.FinalizationComplete)
+            {
+                this.CanValidate = false;
+            }
+        }
+
+        /// <summary>
+        /// Perform async template correction and check results
+        /// </summary>
+        /// <returns></returns>
+        private async Task RunCorrection()
+        {
+            await this.CorrectTemplateAsync();
+
+            if (string.IsNullOrEmpty(this.TemplateId) || this.PageQuestions.Any(x => x.IsValid == false))
+            {
+                this.CorrectionComplete = false;
+                this.ValidationFailed = true;
+            }
+        }
+
+        /// <summary>
         /// Runs template correction
         /// </summary>
-        private void OnCorrectTemplate()
+        private async Task CorrectTemplateAsync()
         {
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += (sender, args) =>
-            {
-                string templateData = TemplateSerializer.TemplateToJson(this, false);
-
-                byte[] imageData = TemplateSerializer.CompressImage(this.TemplateImage, this.ImageSizeInBytes);
-
-                //string imageData = TemplateConverter.CheckAndCompressImage(this.TemplateImage, this.ImageFileFormat, this.ImageSizeInBytes);
-                
-                string additionalPars = string.Empty;
-
-                try
-                {
-                    TemplateViewModel correctedTemplate = CoreApi.CorrectTemplate(this.TemplateImageName,
-                        imageData,
-                        templateData,
-                        this.WasUploaded,
-                        additionalPars);
-
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.ClearSelection();
-                        this.PageQuestions.Clear();
-
-                        this.AddQuestions(correctedTemplate.PageQuestions);
-                        this.TemplateId = correctedTemplate.TemplateId;
-
-                        this.FinalizationComplete = false;
-
-                        double koeff = this.TemplateImage.PixelWidth / correctedTemplate.PageWidth;
-                        ZoomKoefficient *= koeff;
-                        this.OnPropertyChanged(nameof(this.PageScale));
-
-                        this.PageWidth = correctedTemplate.PageWidth;
-                        this.PageHeight = correctedTemplate.PageHeight;
-                        this.WasUploaded = true;
-
-                        this.Warnings.Add("Template correction complete!");
-                    });
-                }
-                catch (Exception e)
-                {
-                    DialogManager.ShowErrorDialog(e.Message);
-                }
-            };
-
-            worker.RunWorkerCompleted += (sender, args) =>
-            {
-                BusyIndicatorManager.Disable();
-            };
-
             BusyIndicatorManager.Enable();
 
-            worker.RunWorkerAsync();
+            string templateData = TemplateSerializer.TemplateToJson(this);
+            byte[] imageData = ImageProcessor.CompressImage(this.TemplateImage, this.ImageSizeInBytes);
+            string additionalPars = string.Empty;
+
+            try
+            {
+                TemplateViewModel correctedTemplate = await Task.Run(() => CoreApi.CorrectTemplate(
+                    this.TemplateImageName,
+                    imageData,
+                    templateData,
+                    this.WasUploaded,
+                    additionalPars));
+
+                this.ClearSelection();
+                this.PageQuestions.Clear();
+
+                this.AddQuestions(correctedTemplate.PageQuestions);
+                this.TemplateId = correctedTemplate.TemplateId;
+
+                double koeff = this.TemplateImage.PixelWidth / correctedTemplate.PageWidth;
+                ZoomKoefficient *= koeff;
+                this.OnPropertyChanged(nameof(this.PageScale));
+
+                this.PageWidth = correctedTemplate.PageWidth;
+                this.PageHeight = correctedTemplate.PageHeight;
+                this.WasUploaded = true;
+
+                this.CorrectionComplete = true;
+                this.Warnings.Add("Template Correction complete!");
+            }
+            catch (Exception e)
+            {
+                DialogManager.ShowErrorDialog(e.Message);
+                this.ValidationFailed = true;
+            }
+            finally
+            {
+                BusyIndicatorManager.Disable();
+            }
         }
 
         /// <summary>
         /// Runs template finalization
         /// </summary>
-        private void OnFinilizeTemplate()
+        private async Task FinilizeTemplateAsync()
         {
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += (sender, args) =>
-            {
-                string templateData = TemplateSerializer.TemplateToJson(this, false);
-                string additionalPars = string.Empty;
-
-                try
-                {
-                    string templateName = Path.GetFileNameWithoutExtension(this.TemplateImageName) + "_template.omr";
-                    FinalizationData finalizationResult = CoreApi.FinalizeTemplate(templateName, Encoding.UTF8.GetBytes(templateData), this.TemplateId, additionalPars);
-
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.ProcessFinalizationResponse(finalizationResult);
-                    });
-                }
-                catch (Exception e)
-                {
-                    DialogManager.ShowErrorDialog(e.Message);
-                }
-            };
-
-            worker.RunWorkerCompleted += (sender, args) =>
-            {
-                BusyIndicatorManager.Disable();
-            };
-
             BusyIndicatorManager.Enable();
 
-            worker.RunWorkerAsync();
+            string templateData = TemplateSerializer.TemplateToJson(this);
+            string additionalPars = string.Empty;
+
+            try
+            {
+                string templateName = Path.GetFileNameWithoutExtension(this.TemplateImageName) + "_template.omr";
+
+                FinalizationData finalizationResult = await Task.Run(() => CoreApi.FinalizeTemplate(templateName,
+                    Encoding.UTF8.GetBytes(templateData), this.TemplateId, additionalPars));
+
+                this.ProcessFinalizationResponse(finalizationResult);
+            }
+            catch (Exception e)
+            {
+                DialogManager.ShowErrorDialog(e.Message);
+                this.ValidationFailed = true;
+            }
+            finally
+            {
+                BusyIndicatorManager.Disable();
+            }
         }
 
         /// <summary>
@@ -782,15 +1133,27 @@ namespace Aspose.OMR.Client.ViewModels
         /// <param name="response">Response containing finalization data</param>
         private void ProcessFinalizationResponse(FinalizationData response)
         {
+            // flag indicates if we should open recognition after finalization
+            bool openRecognition = false;
+
             // parse recognition results for template image
             ObservableCollection<RecognitionResult> recognitionResults = this.ParseAnswers(response.Answers);
 
             if (recognitionResults.Any(x => !string.IsNullOrEmpty(x.AnswerKey)))
             {
-                new FinalizationResultsViewModel(recognitionResults);
+                var finalizationViewModel = new FinalizationResultsViewModel(recognitionResults, this.TemplateImage);
+                if (!finalizationViewModel.ProceedToRecognition)
+                {
+                    this.FinalizationComplete = false;
+                    this.ValidationFailed = true;
+                    return;
+                }
+                else
+                {
+                    openRecognition = true;
+                }
             }
 
-            // TODO
             this.FinalizationComplete = true;
 
             // check warnings
@@ -803,8 +1166,15 @@ namespace Aspose.OMR.Client.ViewModels
             }
             else
             {
-                this.Warnings.Add("Finalization complete!");
-                this.FinalizationComplete = true;
+                this.Warnings.Add("Template Finalization complete!");
+            }
+
+            if (openRecognition)
+            {
+                if (this.FinalizationApproved != null)
+                {
+                    this.FinalizationApproved();
+                }
             }
         }
 
@@ -871,28 +1241,13 @@ namespace Aspose.OMR.Client.ViewModels
                 copy.Top -= deltaTop;
                 copy.Left -= deltaLeft;
 
-                this.OnAddQuestion(copy);
+                this.OnAddQuestion(copy, true);
                 copy.IsSelected = true;
 
                 copiedElements[i] = copy;
             }
 
             ActionTracker.TrackAction(new AddElementsAction(copiedElements, this.PageQuestions));
-        }
-
-        /// <summary>
-        /// Saves template
-        /// </summary>
-        private void OnSaveTemplate()
-        {
-            string savePath = DialogManager.ShowSaveTemplateDialog();
-            if (savePath == null)
-            {
-                return;
-            }
-
-            string jsonRes = TemplateSerializer.TemplateToJson(this, true);
-            File.WriteAllText(savePath, jsonRes);
         }
     }
 }

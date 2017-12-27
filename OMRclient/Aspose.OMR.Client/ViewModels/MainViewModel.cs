@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@ namespace Aspose.OMR.Client.ViewModels
 {
     using System;
     using System.Collections.ObjectModel;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Windows;
@@ -62,6 +63,11 @@ namespace Aspose.OMR.Client.ViewModels
         private string busyIndicationMessage;
 
         /// <summary>
+        /// Recently opened template files collection
+        /// </summary>
+        private ObservableCollection<string> recentFiles;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MainViewModel"/> class.
         /// </summary>
         public MainViewModel()
@@ -71,6 +77,7 @@ namespace Aspose.OMR.Client.ViewModels
 
             this.CanDrop = true;
             this.StartPanelVisibility = Visibility.Visible;
+            this.RecentFiles = new ObservableCollection<string>(UserSettingsUtility.LoadRecentFiles());
 
             this.InitCommands();
         }
@@ -81,9 +88,15 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand LoadTemplateCommand { get; set; }
 
+        public RelayCommand LoadRecentTemlateCommand { get; set; }
+        
+        public RelayCommand GenerateTemplateCommand { get; set; }
+
         public RelayCommand DropTemplateCommand { get; set; }
 
         public RelayCommand SaveTemplateCommand { get; private set; }
+
+        public RelayCommand SaveAsTemplateCommand { get; private set; }
 
         public RelayCommand StartRecognitionCommand { get; set; }
 
@@ -103,6 +116,12 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand SelectAllCommand { get; set; }
 
+        public RelayCommand ApplyFormattingCommand { get; private set; }
+
+        public RelayCommand ShrinkElementCommand { get; private set; }
+
+        public RelayCommand RenameGroupCommand { get; private set; }
+
         public RelayCommand ZoomInCommand { get; set; }
 
         public RelayCommand ZoomOutCommand { get; set; }
@@ -111,11 +130,26 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand ExitCommand { get; set; }
 
+        public RelayCommand CheckBeforeCloseCommand { get; set; }
+
         public RelayCommand ShowCredentialsSettingsCommand { get; set; }
 
         public RelayCommand ShowAboutCommand { get; set; }
 
         #endregion
+
+        /// <summary>
+        /// Gets or sets the recent files list
+        /// </summary>
+        public ObservableCollection<string> RecentFiles
+        {
+            get { return this.recentFiles; }
+            set
+            {
+                this.recentFiles = value;
+                this.OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Gets the visibility of start panel
@@ -148,7 +182,10 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         public bool IsRecognitionAvailable
         {
-            get { return !(this.SelectedTab is ResultsViewModel); }
+            get
+            {
+                return this.SelectedTab is TemplateViewModel;
+            }
         }
 
         /// <summary>
@@ -258,14 +295,18 @@ namespace Aspose.OMR.Client.ViewModels
         {
             this.NewTemplateCommand = new RelayCommand(x => this.OnNewTemplate());
             this.LoadTemplateCommand = new RelayCommand(x => this.OnLoadTemplate());
+            this.LoadRecentTemlateCommand = new RelayCommand(x => this.OnLoadRecentTemplate((string) x), x => this.RecentFiles.Any());
+            this.GenerateTemplateCommand = new RelayCommand(x => this.OnGenerateTemplate());
+
             this.DropTemplateCommand = new RelayCommand(x => this.LoadTemplateFromFile((string)x));
+
             this.SaveTemplateCommand = new RelayCommand(x => this.OnSaveTemplate(), x => this.CanSaveTemplate());
+            this.SaveAsTemplateCommand = new RelayCommand(x => this.OnSaveAsTemplate(), x => this.CanSaveAsTemplate());
 
             this.StartRecognitionCommand = new RelayCommand(x => this.OnStartRecognition());
 
             this.CloseTabCommand = new RelayCommand(x => this.OnCloseTab());
 
-            // shortcuts commands
             this.UndoCommand = new RelayCommand(x => this.OnUndoCommand(), x => this.CanUndo());
             this.RedoCommand = new RelayCommand(x => this.OnRedoCommand(), x => this.CanRedo());
 
@@ -280,9 +321,14 @@ namespace Aspose.OMR.Client.ViewModels
             this.ZoomOutCommand = new RelayCommand(x => this.OnZoomOutCommand());
             this.ZoomOriginalCommand = new RelayCommand(x => this.OnZoomOriginalCommand());
 
+            this.ApplyFormattingCommand = new RelayCommand(x => this.OnApplyFormattingCommand(), x => this.CanApplyFormatting());
+            this.RenameGroupCommand = new RelayCommand(x => this.OnRenameGroupCommand(), x => this.CanRenameGoup());
+            this.ShrinkElementCommand = new RelayCommand(x => this.OnShrinkElementCommand(), x => this.CanShrinkElement());
+
             this.ShowCredentialsSettingsCommand = new RelayCommand(x => new CredentialsViewModel());
             this.ShowAboutCommand = new RelayCommand(x => new AboutView().ShowDialog());
 
+            this.CheckBeforeCloseCommand = new RelayCommand(x => this.CleanUpOnClosing());
             this.ExitCommand = new RelayCommand(x => this.Exit());
         }
 
@@ -290,18 +336,80 @@ namespace Aspose.OMR.Client.ViewModels
 
         private void OnSaveTemplate()
         {
-            ((TemplateViewModel) this.SelectedTab).SaveTemplateCommand.Execute(null);
+            string loadedPath = (this.SelectedTab as TemplateViewModel).LoadedPath;
+
+            if (!string.IsNullOrEmpty(loadedPath))
+            {
+                // if template was loaded from file, save to same location
+                this.SaveTemplateByPath(loadedPath);
+            }
+            else
+            {
+                // if saving new template, ask for save location
+                this.OnSaveAsTemplate();
+            }
         }
 
         private bool CanSaveTemplate()
         {
-            var selectedTemplate = this.SelectedTab as TemplateViewModel;
-            if (selectedTemplate != null && selectedTemplate.SaveTemplateCommand.CanExecute(null))
+            if (this.SelectedTab is TemplateViewModel)
             {
-                return true;
+                TemplateViewModel template = this.SelectedTab as TemplateViewModel;
+                return template.PageQuestions.Any() && template.IsDirty;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Saves As.. template
+        /// </summary>
+        private void OnSaveAsTemplate()
+        {
+            string savePath = DialogManager.ShowSaveTemplateDialog();
+            if (savePath == null)
+            {
+                return;
+            }
+
+            RecentMenuManager.AddFileNameToRecentList(this.RecentFiles, savePath);
+            this.SaveTemplateByPath(savePath);
+        }
+
+        private bool CanSaveAsTemplate()
+        {
+            if (this.SelectedTab is TemplateViewModel)
+            {
+                TemplateViewModel template = this.SelectedTab as TemplateViewModel;
+                return template.PageQuestions.Any();
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Performs template save routine by specified path
+        /// </summary>
+        /// <param name="path">Path to save template</param>
+        private void SaveTemplateByPath(string path)
+        {
+            if (this.SelectedTab is TemplateViewModel)
+            {
+                TemplateViewModel template = this.SelectedTab as TemplateViewModel;
+                template.TemplateName = Path.GetFileNameWithoutExtension(path);
+
+                // save .omr template data
+                string jsonRes = TemplateSerializer.TemplateToJson(template);
+                File.WriteAllText(path, jsonRes);
+
+                path = path.Replace(".omr", ".jpg");
+
+                // save template image
+                ImageProcessor.SaveTemplateImage(template.TemplateImage, path);
+
+                template.IsDirty = false;
+                template.LoadedPath = path;
+            }
         }
 
         private void LoadTemplateImage()
@@ -379,6 +487,66 @@ namespace Aspose.OMR.Client.ViewModels
             }
         }
 
+        private void OnApplyFormattingCommand()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.ApplyFormattingCommand.CanExecute(null))
+            {
+                selectedTemplate.ApplyFormattingCommand.Execute(null);
+            }
+        }
+
+        private bool CanApplyFormatting()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.ApplyFormattingCommand.CanExecute(null))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void OnRenameGroupCommand()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.RenameGroupCommand.CanExecute(null))
+            {
+                selectedTemplate.RenameGroupCommand.Execute(null);
+            }
+        }
+
+        private bool CanRenameGoup()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.RenameGroupCommand.CanExecute(null))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void OnShrinkElementCommand()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.ShrinkElementCommand.CanExecute(null))
+            {
+                selectedTemplate.ShrinkElementCommand.Execute(null);
+            }
+        }
+
+        private bool CanShrinkElement()
+        {
+            var selectedTemplate = this.SelectedTab as TemplateViewModel;
+            if (selectedTemplate != null && selectedTemplate.ShrinkElementCommand.CanExecute(null))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private void OnSelectAllCommand()
         {
             ((TemplateViewModel) this.SelectedTab).SelectAllElementsCommand.Execute(null);
@@ -452,11 +620,80 @@ namespace Aspose.OMR.Client.ViewModels
         #endregion
 
         /// <summary>
+        /// Run all needed logic on app shutdown
+        /// </summary>
+        private void CleanUpOnClosing()
+        {
+            RecentMenuManager.UpdateRecentFiles(this.RecentFiles.ToList());
+
+            // Manually close all tabs on app shut down to provoce asking for save
+            while (this.SelectedTab != null)
+            {
+                this.OnCloseTab();
+            }
+        }
+
+        /// <summary>
         /// Exits the application.
         /// </summary>
         private void Exit()
         {
             Environment.Exit(0);
+        }
+
+        /// <summary>
+        /// Show template generation view and process results returned by request
+        /// </summary>
+        private void OnGenerateTemplate()
+        {
+            // return if there is active tabs and action was cancelled
+            if (!this.CloseActiveTemplateTab())
+            {
+                return;
+            }
+
+            var viewModel = new TemplateGeneratorViewModel();
+            viewModel.ViewClosed += this.GenerationCompleted;
+        }
+
+        /// <summary>
+        /// Template generation completed handler
+        /// </summary>
+        /// <param name="generationResult">Generation result</param>
+        private void GenerationCompleted(TemplateGenerationContent generationResult)
+        {
+            if (generationResult == null)
+            {
+                return;
+            }
+
+            TemplateViewModel templateViewModel = generationResult.Template;
+            templateViewModel.TemplateImage = TemplateSerializer.DecompressImage(Convert.ToBase64String(generationResult.ImageData));
+            templateViewModel.TemplateImageName = templateViewModel.TemplateName + ".jpg";
+            templateViewModel.IsGeneratedTemplate = true;
+            templateViewModel.IsDirty = true;
+
+            this.AddTab(templateViewModel);
+        }
+
+        /// <summary>
+        /// Loads recent template file from disk
+        /// </summary>
+        private void OnLoadRecentTemplate(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            if (!File.Exists(path))
+            {
+                DialogManager.ShowErrorDialog("Failed to find file " + path);
+                RecentMenuManager.RemoveFileFromRecentList(this.RecentFiles, path);
+                return;
+            }
+
+            this.LoadTemplateFromFile(path);
         }
 
         /// <summary>
@@ -479,18 +716,117 @@ namespace Aspose.OMR.Client.ViewModels
         /// <param name="file">Path to template file</param>
         private void LoadTemplateFromFile(string file)
         {
-            string jsonString = File.ReadAllText(file);
-            TemplateViewModel tempalteViewModel = TemplateSerializer.JsonToTemplate(jsonString);
+            // return if there is active tabs and action was cancelled
+            if (!this.CloseActiveTemplateTab())
+            {
+                return;
+            }
 
-            this.TabViewModels.Add(tempalteViewModel);
-            this.SelectedTab = tempalteViewModel;
+            if (!File.Exists(file))
+            {
+                DialogManager.ShowErrorDialog("Failed to find file " + file + ".");
+                return;
+            }
+
+            string directory = Path.GetDirectoryName(file);
+            if (string.IsNullOrEmpty(directory))
+            {
+                DialogManager.ShowErrorDialog("Failed to load template image.");
+                return;
+            }
+
+            string templateName = Path.GetFileNameWithoutExtension(file);
+
+            // find files with image extension and template name in the same directory
+            List<string> imageFiles = DialogManager.GetImageFilesFromDirectory(directory)
+                .Where(x => Path.GetFileNameWithoutExtension(x).Equals(templateName)).ToList();
+
+            if (imageFiles.Count < 1)
+            {
+                DialogManager.ShowErrorDialog("Failed to find template image.");
+                return;
+            }
+
+            if (imageFiles.Count > 1)
+            {
+                DialogManager.ShowErrorDialog("Failed to load template image. Found several files with name: " +
+                                              Path.GetFileNameWithoutExtension(file) + ".");
+                return;
+            }
+
+            // load and deserialize template data
+            string jsonString = File.ReadAllText(file);
+            TemplateViewModel templateViewModel = TemplateSerializer.JsonToTemplate(jsonString);
+
+            // if no name in template, use name of the file
+            if (string.IsNullOrEmpty(templateViewModel.TemplateName))
+            {
+                templateViewModel.TemplateName = Path.GetFileNameWithoutExtension(file);
+            }
+
+            // load image and check if it was loaded
+            bool imageLoaded = templateViewModel.LoadTemplateImageFromFile(imageFiles[0]);
+            if (!imageLoaded)
+            {
+                return;
+            }
+
+            templateViewModel.LoadedPath = file;
+            templateViewModel.IsDirty = false;
+            templateViewModel.FinalizationApproved += this.OnStartRecognition;
+
+            this.CloseActiveTemplateTab();
+
+            this.AddTab(templateViewModel);
+
+            RecentMenuManager.AddFileNameToRecentList(this.RecentFiles, file);
         }
 
         /// <summary>
-        /// Closes tab
+        /// Closes active template vm tabs if there is any
         /// </summary>
-        private void OnCloseTab()
+        /// <returns>False if tab closing was cancelled by user, true otherwise</returns>
+        private bool CloseActiveTemplateTab()
         {
+            if (this.TabViewModels.Any(x => x is TemplateViewModel))
+            {
+                var templateVm = this.TabViewModels.First(x => x is TemplateViewModel) as TemplateViewModel;
+                this.SelectedTab = templateVm;
+                return this.OnCloseTab();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to close active tab
+        /// </summary>
+        /// <returns>False if tab closing was cancelled by user, true otherwise</returns>
+        private bool OnCloseTab()
+        {
+            if (this.SelectedTab.IsDirty)
+            {
+                if (this.SelectedTab is TemplateViewModel)
+                {
+                    MessageBoxResult dialogResult = DialogManager.ShowConfirmDirtyClosingDialog(
+                            "This template has unsaved changes. Do you want to save them?");
+
+                    if (dialogResult == MessageBoxResult.Cancel)
+                    {
+                        // cancel closing
+                        return false;
+                    }
+                    else if (dialogResult == MessageBoxResult.Yes)
+                    {
+                        // save
+                        this.OnSaveTemplate();
+                    }
+                }
+                else if (this.SelectedTab is ResultsViewModel)
+                {
+                }
+            }
+
             this.TabViewModels.Remove(this.SelectedTab);
             if (this.TabViewModels.Count > 0)
             {
@@ -499,28 +835,31 @@ namespace Aspose.OMR.Client.ViewModels
             else
             {
                 this.SelectedTab = null;
-                ActionTracker.ClearCommands();
             }
+
+            ActionTracker.ClearCommands();
+            return true;
         }
-        
+
         /// <summary>
         /// Create new template
         /// </summary>
         private void OnNewTemplate()
         {
-            TemplateViewModel templateVm;
-
-            if (this.TabViewModels.Any(x => x is TemplateViewModel))
+            // return if there is active tabs and action was cancelled
+            if (!this.CloseActiveTemplateTab())
             {
-                templateVm = this.TabViewModels.First(x => x is TemplateViewModel) as TemplateViewModel;
-                this.SelectedTab = templateVm;
-                this.OnCloseTab();
+                return;
             }
 
-            string tabName = "Template";
-            templateVm = new TemplateViewModel(tabName);
-            this.TabViewModels.Add(templateVm);
-            this.SelectedTab = templateVm;
+            var templateVm = new TemplateViewModel(false, string.Empty);
+            templateVm.TemplateName = "New Template";
+            templateVm.FinalizationApproved += this.OnStartRecognition;
+
+            // reinit zoom koefficient
+            TemplateViewModel.ZoomKoefficient = 1;
+
+            this.AddTab(templateVm);
         }
 
         /// <summary>
@@ -530,17 +869,45 @@ namespace Aspose.OMR.Client.ViewModels
         {
             if (!this.FinalizationComplete)
             {
-                string message = "There is no finalized template to work with!";
-                MessageBox.Show(message, "Oops", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                DialogManager.ShowErrorDialog("There is no finalized template to work with!");
+                return;
+            }
+
+            // find opened results tab and select it
+            TabViewModel resultsTab = this.TabViewModels.FirstOrDefault(x => x is ResultsViewModel);
+            if (resultsTab != null)
+            {
+                this.SelectedTab = resultsTab;
                 return;
             }
 
             string tabName = "Recognition";
-            string id = ((TemplateViewModel)this.TabViewModels.First(x => x is TemplateViewModel)).TemplateId;
 
-            ResultsViewModel resultsVm = new ResultsViewModel(tabName, id);
-            this.TabViewModels.Add(resultsVm);
-            this.SelectedTab = resultsVm;
+            // find template and get needed info
+            TemplateViewModel template = (TemplateViewModel) this.TabViewModels.First(x => x is TemplateViewModel);
+            string templateId = template.TemplateId;
+            bool isGenerated = template.IsGeneratedTemplate;
+
+            ResultsViewModel resultsVm = new ResultsViewModel(tabName, templateId, isGenerated);
+            this.AddTab(resultsVm);
+        }
+        
+        /// <summary>
+        /// Adds new tab and selects it. Subscribe to events if any
+        /// </summary>
+        /// <param name="tab">Tab to add and select</param>
+        private void AddTab(TabViewModel tab)
+        {
+            this.TabViewModels.Add(tab);
+            this.SelectedTab = tab;
+
+            if (tab is TemplateViewModel)
+            {
+                TemplateViewModel templateViewModel = tab as TemplateViewModel;
+
+                // subscriptions for template view model events
+                templateViewModel.FinalizationApproved += this.OnStartRecognition;
+            }
         }
     }
 }

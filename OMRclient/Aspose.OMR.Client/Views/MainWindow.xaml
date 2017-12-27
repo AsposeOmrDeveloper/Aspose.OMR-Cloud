@@ -4,7 +4,7 @@
         xmlns:viewModels="clr-namespace:Aspose.OMR.Client.ViewModels"
         xmlns:views="clr-namespace:Aspose.OMR.Client.Views"
         xmlns:converters="clr-namespace:Aspose.OMR.Client.Converters"
-        Icon="/Icons/Polling.png"
+        Icon="/OMR.ico"
         Title="OMR Client"
         WindowStartupLocation="CenterScreen"
         MinHeight="600" MinWidth="800"
@@ -72,6 +72,7 @@
         
         <DockPanel>
             
+            <!--file menu-->
             <Menu DockPanel.Dock="Top" Background="Transparent">
                 
                 <MenuItem Header="_File">
@@ -87,13 +88,27 @@
                             <Image Source="/Icons/Open.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
+
+                    <MenuItem Header="_Generate Template..." Command="{Binding GenerateTemplateCommand}" ToolTip="Generate Template From Text Description"/>
+
                     <MenuItem Header="_Save" Command="{Binding SaveTemplateCommand}" InputGestureText="Ctrl+S" ToolTip="Save Changes To Current Template">
                         <MenuItem.Icon>
                             <Image Source="/Icons/Save.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    
-                    <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4" ToolTip="Close Application">
+
+                    <MenuItem Header="Save As..." Command="{Binding SaveAsTemplateCommand}" ToolTip="Save Changes To Current Template"/>
+
+                    <MenuItem Header="Recent Templates" x:Name="RecentTemplates" ItemsSource="{Binding RecentFiles}">
+                        <MenuItem.Resources>
+                            <Style TargetType="MenuItem">
+                                <Setter Property="Command" Value="{Binding ElementName=RecentTemplates, Path=DataContext.LoadRecentTemlateCommand}" />
+                                <Setter Property="CommandParameter" Value="{Binding}" />
+                            </Style>
+                        </MenuItem.Resources>
+                    </MenuItem>
+
+                        <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4" ToolTip="Close Application">
                         <MenuItem.Icon>
                             <Image Source="/Icons/Exit.png"/>
                         </MenuItem.Icon>
@@ -141,6 +156,18 @@
 
                     <MenuItem Header="_Select All" Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A" ToolTip="Select All Elements"/>
 
+                    <MenuItem Header="_Apply Formatting" Command="{Binding ApplyFormattingCommand}" 
+                              ToolTipService.ShowOnDisabled="True" ToolTip="Apply Formatting Of The Selected Element To All Elements"/>
+
+                    <MenuItem Header="_Rename Group" Command="{Binding RenameGroupCommand}" 
+                              ToolTipService.ShowOnDisabled="True" ToolTip="Quickly Rename Group Of Elements"/>
+
+                    <MenuItem Header="Shrink" Command="{Binding ShrinkElementCommand}" 
+                              ToolTipService.ShowOnDisabled="True" ToolTip="Shrink Element's Area To Bounding Box Of Its Bubbles">
+                        <MenuItem.Icon>
+                            <Image Source="/Icons/Shrink.png" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </MenuItem>
 
                 <MenuItem Header="_View">
@@ -174,8 +201,9 @@
                 </MenuItem>
             </Menu>
 
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="Transparent">
-                <views:MainToolbarView  Height="30"/>
+            <!--toolbar-->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="White">
+                <views:MainToolbarView  Height="30" Background="White"/>
                 <ContentControl Content="{Binding SelectedTab}" DockPanel.Dock="Right">
                     <ContentControl.Resources>
                         <DataTemplate DataType="{x:Type viewModels:TemplateViewModel}">
@@ -186,13 +214,15 @@
                         </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>
-                <ToolBarTray IsLocked="True" DockPanel.Dock="Top" Visibility="{Binding IsRecognitionAvailable, Converter={converters:BoolToVisibilityConverter}}">
-                    <ToolBar>
+                
+                <ToolBarTray Background="White" IsLocked="True" DockPanel.Dock="Top" Visibility="{Binding IsRecognitionAvailable, Converter={converters:BoolToVisibilityConverter}}">
+                    <ToolBar Background="White">
                         <Button Content="Recognize" Command="{Binding StartRecognitionCommand}"></Button>
                     </ToolBar>
                 </ToolBarTray>
             </StackPanel>
         
+            <!--main area-->
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"></RowDefinition>
@@ -203,7 +233,7 @@
 
                 <TabControl Grid.Row="0" Grid.Column="0" Background="WhiteSmoke" x:Name="TabControl" Focusable="False"
                             ItemsSource="{Binding TabViewModels}" SelectedItem="{Binding SelectedTab}"
-                            AllowDrop="{Binding CanDrop}" Drop="OnTemplateDrop">
+                            AllowDrop="{Binding CanDrop}" Drop="OnTemplateDrop" BorderBrush="LightSkyBlue">
                     
                     <TabControl.Resources>
                         <DataTemplate DataType="{x:Type viewModels:TemplateViewModel}">
@@ -213,16 +243,23 @@
                             <views:ResultsView/>
                         </DataTemplate>
                     </TabControl.Resources>
+                    
                     <TabControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{Binding TabName}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Button Content="X" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                        Width="20" Height="20" FontWeight="Bold" FontSize="14" Padding="0"
-                                        FontFamily="Courier" Margin="5,0,0,0"
+                                
+                                <TextBlock Text="*" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="1,0,0,0" FontSize="14" 
+                                           Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TabItem}}, Path=DataContext.IsDirty, Converter={converters:BoolToVisibilityConverter}}"/>
+                                
+                                <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Width="16" Height="16" ToolTip="Close Tab"
+                                        Padding="0" Margin="5,0,0,0"
                                         Visibility="{Binding IsSelected, Converter={converters:BoolToVisibilityConverter}}"
                                         Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
-                                        Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TabControl}}, Path=DataContext.CloseTabCommand}"/>
+                                        Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type TabControl}}, Path=DataContext.CloseTabCommand}">
+                                    <Image Source="/Icons/DeleteCrossIcon.ico" Width="12" Height="12"/>
+                                </Button>
                             </StackPanel>
                         </DataTemplate>
                     </TabControl.ItemTemplate>
@@ -253,8 +290,19 @@
                             </Button.Content>
                         </Button>
                     </StackPanel>
-                    
-                    
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="2">
+                        <Button HorizontalAlignment="Center" FontSize="18" Command="{Binding GenerateTemplateCommand}" Style="{StaticResource ImageButton}" 
+                                BorderThickness="1" BorderBrush="{StaticResource MainItemsBrush}" Background="White" ToolTip="Open template" Margin="5">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Generate template" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+
+
                     <TextBlock Text="You may also Drag &amp; Drop template file to open it" FontSize="16" Foreground="Gray"
                                VerticalAlignment="Center" Margin="5" HorizontalAlignment="Center"></TextBlock>
                 </StackPanel>

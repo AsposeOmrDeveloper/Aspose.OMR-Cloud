@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -92,9 +92,10 @@ namespace Aspose.OMR.Client
         /// <param name="wasUploaded">Indicates if image was already uploaded on cloud</param>
         /// <param name="additionalParams">The additional parameters</param>
         /// <returns>Corrected template</returns>
-        public static TemplateViewModel CorrectTemplate(string imageName, byte[] imageData, string templateData, bool wasUploaded,  string additionalParams)
+        public static TemplateViewModel CorrectTemplate(string imageName, byte[] imageData, string templateData, bool wasUploaded, string additionalParams)
         {
-            OMRResponse response = RunOmrTask("CorrectTemplate", imageName, imageData, templateData, wasUploaded, false, additionalParams);
+            OMRResponse response = RunOmrTask(OmrFunctions.CorrectTemplate, imageName, imageData, templateData,
+                wasUploaded, false, additionalParams);
 
             OmrResponseContent responseResult = response.Payload.Result;
             CheckTaskResult(response.Payload.Result);
@@ -109,6 +110,26 @@ namespace Aspose.OMR.Client
             return templateViewModel;
         }
 
+        public static TemplateGenerationContent GenerateTemplate(string descriptionFileName, byte[] descriptionData, string images, bool wasUploaded, string additionalParams)
+        {
+            OMRResponse response = RunOmrTask(OmrFunctions.GenerateTemplate, descriptionFileName, descriptionData,
+                images, wasUploaded, false, additionalParams);
+
+            OmrResponseContent responseResult = response.Payload.Result;
+            CheckTaskResult(response.Payload.Result);
+
+            byte[] template = responseResult.ResponseFiles.First(x => x.Name.Contains(".omr")).Data;
+            byte[] imageFile = responseResult.ResponseFiles.First(x => x.Name.Contains(".png")).Data;
+
+            TemplateViewModel templateViewModel = TemplateSerializer.JsonToTemplate(Encoding.UTF8.GetString(template));
+
+            TemplateGenerationContent generationContent = new TemplateGenerationContent();
+            generationContent.ImageData = imageFile;
+            generationContent.Template = templateViewModel;
+
+            return generationContent;
+        }
+
         /// <summary>
         /// Performs template finalization
         /// </summary>
@@ -119,7 +140,7 @@ namespace Aspose.OMR.Client
         /// <returns>Finalization data containing warnings</returns>
         public static FinalizationData FinalizeTemplate(string templateName, byte[] templateData, string templateId, string additionalParams)
         {
-            OMRResponse response = RunOmrTask("FinalizeTemplate", templateName, templateData, templateId, false, false, additionalParams);
+            OMRResponse response = RunOmrTask(OmrFunctions.FinalizeTemplate, templateName, templateData, templateId, false, false, additionalParams);
             OmrResponseContent responseResult = response.Payload.Result;
             CheckTaskResult(response.Payload.Result);
 
@@ -140,12 +161,13 @@ namespace Aspose.OMR.Client
         /// <returns>Recognition results</returns>
         public static string RecognizeImage(string imageName, byte[] imageData, string templateId, bool wasUploaded, string additionalParams)
         {
-            OMRResponse response = RunOmrTask("RecognizeImage", imageName, imageData, templateId, wasUploaded, true, additionalParams);
+            OMRResponse response = RunOmrTask(OmrFunctions.RecognizeImage, imageName, imageData, templateId, wasUploaded, true, additionalParams);
 
             OmrResponseContent responseResult = response.Payload.Result;
             if (responseResult.Info.SuccessfulTasksCount < 1 || responseResult.Info.Details.RecognitionStatistics[0].TaskResult != "Pass")
             {
                 StringBuilder builder = new StringBuilder();
+                builder.AppendLine("Error recognizing image " + "\"" + imageName + "\".");
                 foreach (string message in responseResult.Info.Details.RecognitionStatistics[0].TaskMessages)
                 {
                     builder.AppendLine(message);
@@ -161,7 +183,7 @@ namespace Aspose.OMR.Client
         /// <summary>
         /// Put files to the cloud and call OMR task
         /// </summary>
-        /// <param name="actionName">The action name string</param>
+        /// <param name="action">The executed OMR function</param>
         /// <param name="fileName">The file name</param>
         /// <param name="fileData">The file data</param>
         /// <param name="functionParam">The function parameters</param>
@@ -169,7 +191,7 @@ namespace Aspose.OMR.Client
         /// <param name="trackFile">Track file so that it can be deleted from cloud</param>
         /// <param name="additionalParam">The additional (debug) parameters</param>
         /// <returns>Task response</returns>
-        public static OMRResponse RunOmrTask(string actionName, string fileName, byte[] fileData, string functionParam, bool wasUploaded, bool trackFile, string additionalParam)
+        public static OMRResponse RunOmrTask(OmrFunctions action, string fileName, byte[] fileData, string functionParam, bool wasUploaded, bool trackFile, string additionalParam)
         {
             if (string.IsNullOrEmpty(AppKey) || string.IsNullOrEmpty(AppSid))
             {
@@ -185,8 +207,21 @@ namespace Aspose.OMR.Client
                     CloudStorageManager.TrackFileUpload(fileName);
                 }
 
-                StorageApi storageApi = new StorageApi(AppKey, AppSid, Basepath);
-                storageApi.PutCreate(fileName, "", "", fileData);
+                try
+                {
+                    StorageApi storageApi = new StorageApi(AppKey, AppSid, Basepath);
+                    storageApi.PutCreate(fileName, "", "", fileData);
+                }
+                catch (Com.Aspose.Storage.ApiException e)
+                {
+                    if (e.ErrorCode == 401)
+                    {
+                        // handle authentification exception
+                        throw new Exception("Aspose Cloud Authentification Failed! Please check App Key and App SID in Settings->Credentials.");
+                    }
+
+                    throw;
+                }
             }
 
             OmrApi omrApi = new OmrApi(AppKey, AppSid, Basepath);
@@ -195,8 +230,26 @@ namespace Aspose.OMR.Client
             param.FunctionParam = functionParam;
             param.AdditionalParam = additionalParam;
 
-            BusyIndicatorManager.UpdateText("Processing task...");
-            OMRResponse response = omrApi.PostRunOmrTask(fileName, actionName, param, null, null);
+            string busyMessage = "";
+
+            switch (action)
+            {
+                case OmrFunctions.CorrectTemplate:
+                    busyMessage = "Performing Template Correction...";
+                    break;
+                case OmrFunctions.FinalizeTemplate:
+                    busyMessage = "Performing Template Finalization...";
+                    break;
+                case OmrFunctions.RecognizeImage:
+                    busyMessage = "Performing Recognition...";
+                    break;
+                case OmrFunctions.GenerateTemplate:
+                    busyMessage = "Generating Template...";
+                    break;
+            }
+
+            BusyIndicatorManager.UpdateText(busyMessage);
+            OMRResponse response = omrApi.PostRunOmrTask(fileName, action.ToString(), param, null, null);
             CheckForError(response);
             return response;
         }
@@ -245,7 +298,7 @@ namespace Aspose.OMR.Client
         /// <param name="response">Response to check</param>
         private static void CheckForError(OMRResponse response)
         {
-            if (response.ErrorCode != 0 || response.Code != "200")
+            if (response.ErrorCode != 0 )
             {
                 throw new Exception(response.ErrorText);
             }

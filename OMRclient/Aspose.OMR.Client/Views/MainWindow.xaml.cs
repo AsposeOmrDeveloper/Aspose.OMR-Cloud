@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 using System;
 
 namespace Aspose.OMR.Client.Views
@@ -36,6 +35,14 @@ namespace Aspose.OMR.Client.Views
 
         private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // run data checks in view model
+            var mainViewModel = this.DataContext as MainViewModel;
+            if (mainViewModel != null)
+            {
+                mainViewModel.CheckBeforeCloseCommand.Execute(null);
+            }
+
+            // clean up on storage
             int filesCount = CloudStorageManager.UploadedFilesCount;
 
             if (filesCount > 0)

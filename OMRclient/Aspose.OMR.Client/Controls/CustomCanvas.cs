@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ namespace Aspose.OMR.Client.Controls
     using System.Windows.Documents;
     using System.Windows.Input;
     using System.Windows.Media;
+    using Utility;
     using ViewModels;
     using Point = System.Windows.Point;
 
@@ -36,7 +37,7 @@ namespace Aspose.OMR.Client.Controls
         /// <summary>
         /// The selection mode of RubberbandAdorner
         /// </summary>
-        private SelectionRectnagleModes mode;
+        private SelectionRectangleModes mode;
 
         /// <summary>
         /// Clears elements selection
@@ -102,15 +103,15 @@ namespace Aspose.OMR.Client.Controls
                 {
                     TemplateViewModel dataContext = (TemplateViewModel) this.DataContext;
 
-                    this.mode = SelectionRectnagleModes.Selection;
+                    this.mode = SelectionRectangleModes.Selection;
 
                     if (dataContext.IsAddingChoiceBox)
                     {
-                        this.mode = SelectionRectnagleModes.ChoiceBox;
+                        this.mode = SelectionRectangleModes.ChoiceBox;
                     }
                     else if (dataContext.IsAddingGrid)
                     {
-                        this.mode = SelectionRectnagleModes.Grid;
+                        this.mode = SelectionRectangleModes.Grid;
                     }
 
                     RubberbandAdorner adorner = new RubberbandAdorner(this, this.dragStartPoint, this.mode);
@@ -135,7 +136,7 @@ namespace Aspose.OMR.Client.Controls
             AdornerLayer adornerLayer = AdornerLayer.GetAdornerLayer(this);
             adornerLayer?.Remove(adorner);
 
-            if (this.mode != SelectionRectnagleModes.Selection)
+            if (this.mode != SelectionRectangleModes.Selection)
             {
                 TemplateViewModel context = (TemplateViewModel)this.DataContext;
                 context.AddQuestion(adorner.Rectangle);

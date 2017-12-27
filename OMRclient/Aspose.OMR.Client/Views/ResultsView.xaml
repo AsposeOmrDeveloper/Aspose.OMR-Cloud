@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!--list view-->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2">
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2" Background="White">
             <local:ImagesPreview></local:ImagesPreview>
         </Border>
 
@@ -49,16 +49,29 @@
             <local:AnswersView/>
         </Border>
 
-        <Border Grid.Row="1" Grid.Column="3" Margin="3,1,0,0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2">
-            <Button Content="Export Results" Margin="3" Command="{Binding ExportDataCommand}"></Button>
+        <Border Grid.Row="1" Grid.Column="3" Margin="3,1,0,0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2" Background="White">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                
+                <Button Content="Export Results" Margin="2" Grid.Column="0" ToolTip="Export recognition results for current image"
+                        Command="{Binding ExportDataCommand}" Style="{StaticResource ImageButton}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                
+                <Button Content="Export All" Margin="2" Grid.Column="1" ToolTip="Export all results"
+                        Command="{Binding ExportAllCommand}" Style="{StaticResource ImageButton}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            </Grid>
         </Border>
 
         <!--lower toolbar-->
-        <Border Margin="0,3,0,0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2"
+        <Border Margin="0,0,0,0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2"
                 Grid.Row="1" Grid.Column="1">
             <DockPanel>
-                <ToolBarTray DockPanel.Dock="Bottom" IsLocked="True">
-                    <ToolBar>
+                <ToolBarTray DockPanel.Dock="Bottom" IsLocked="True" Background="White" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <ToolBar Background="White">
                         <Button Content="Out" Command="{Binding ZoomOutCommand}" Margin="5,0,5,0"/>
 
                         <Slider x:Name="Slider"
@@ -72,7 +85,7 @@
 
                         <Button Content="Original" Command="{Binding ZoomOriginalCommand}"/>
                         
-                        <Button Click="OnFitPageWidth" ToolTip="Fit Page Width" ToolTipService.ShowOnDisabled="True">
+                        <Button Click="OnFitPageWidth" ToolTip="Fit Page Width" ToolTipService.ShowOnDisabled="True" Background="White">
                             <Image Source="/Icons/FitWidth.png" />
                         </Button>
 
