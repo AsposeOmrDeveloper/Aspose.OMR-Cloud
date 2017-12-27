@@ -20,8 +20,8 @@
     </UserControl.Resources>
     
     <Grid>
-        <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
-            <ToolBar>
+        <ToolBarTray DockPanel.Dock="Top" IsLocked="True" Background="White">
+            <ToolBar Background="White">
                 <Button Command="{Binding NewTemplateCommand}" ToolTip="New Template" Margin="0,0,6,0">
                     <Image Source="/Icons/DocumentNew.png"/>
                 </Button>
@@ -32,10 +32,6 @@
                     <Image Source="/Icons/Save.png" />
                 </Button>
             </ToolBar>
-            <!--<ToolBar>
-                    <Button Content="Recognition" Command="{Binding StartRecognitionCommand}"></Button>
-                </ToolBar>-->
         </ToolBarTray>
-
     </Grid>
 </UserControl>

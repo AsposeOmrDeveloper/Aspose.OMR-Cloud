@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Aspose.OMR.Client.Controls"
         mc:Ignorable="d"
-        Title="CustomMappingView" Height="450" Width="350" 
+        Title="Add Custom Mapping" Height="450" Width="350" 
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         FocusManager.FocusedElement="{Binding ElementName=NameTextBox}"
         Icon="/Icons/Polling.png">
@@ -60,10 +60,12 @@
 
         <Button Content="Save" Grid.Row="3" Grid.Column="0" 
                 HorizontalAlignment="Center" Height="25" Width="60" Margin="5"
-                Command="{Binding OkCommand}"/>
+                Command="{Binding OkCommand}"
+                BorderThickness="1" BorderBrush="{StaticResource MainItemsBrush}" Style="{StaticResource ImageButton}"/>
 
         <Button Content="Cancel" Grid.Row="3" Grid.Column="1"  
                 HorizontalAlignment="Center" Height="25" Width="60" Margin="5"
-                Command="{Binding CancelCommand}"/>
+                Command="{Binding CancelCommand}"
+                BorderThickness="1" BorderBrush="{StaticResource MainItemsBrush}" Style="{StaticResource ImageButton}"/>
     </Grid>
 </Window>

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,6 +55,9 @@ namespace Aspose.OMR.TemplateModel
 
         [DataMember(Order = 5, Name = "FinalizationComplete")]
         public bool FinalizationComplete { get; set; }
+
+        [DataMember(Order = 6, Name = "IsGenerated")]
+        public bool IsGenerated { get; set; }
 
         /// <summary>
         /// Adds page to template

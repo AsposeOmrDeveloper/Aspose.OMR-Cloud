@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -89,18 +89,18 @@ namespace Aspose.OMR.Client.Utility
             AnswersMappingDictionary = new Dictionary<string, string[]>();
             CustomMappingDictionary = new Dictionary<string, string[]>();
 
+            // add default values
+            AnswersMappingDictionary.Add(englishLettersKeyUpper, EnglishLettersUppercase);
+            AnswersMappingDictionary.Add(englishLettersKeyLower, EnglishLettersLowercase);
+            AnswersMappingDictionary.Add(digitsFromOneKey, DigitsFromOne);
+            AnswersMappingDictionary.Add(digitsFromZeroKey, DigitsFromZero);
+
             // load from settings and add user entries in format : "name" (or key) - "values"
             CustomMappingDictionary = UserSettingsUtility.LoadCustomMappings();
             foreach (var entry in CustomMappingDictionary)
             {
                 AnswersMappingDictionary.Add(entry.Key, entry.Value);
             }
-
-            // add default values
-            AnswersMappingDictionary.Add(englishLettersKeyUpper, EnglishLettersUppercase);
-            AnswersMappingDictionary.Add(englishLettersKeyLower, EnglishLettersLowercase);
-            AnswersMappingDictionary.Add(digitsFromOneKey, DigitsFromOne);
-            AnswersMappingDictionary.Add(digitsFromZeroKey, DigitsFromZero);
         }
 
         /// <summary>

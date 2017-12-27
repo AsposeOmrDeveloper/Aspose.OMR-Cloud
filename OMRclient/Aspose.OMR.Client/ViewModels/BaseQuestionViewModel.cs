@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -65,28 +65,23 @@ namespace Aspose.OMR.Client.ViewModels
         private double left;
 
         /// <summary>
-        /// Collection of mapping keys used as source of mapping selection drop-down menu
-        /// </summary>
-        private ObservableCollection<string> answersMapping;
-
-        /// <summary>
         /// Gets or sets the collection that stores all answer mappings 'keys'
         /// This is items source in mappings drop-down menu
         /// </summary>
         public ObservableCollection<string> AnswersMapping
         {
-            get { return this.answersMapping; }
-            protected set
-            {
-                this.answersMapping = value;
-                this.OnPropertyChanged();
-            }
+            get { return new ObservableCollection<string>(AnswersMappingHelper.GetAnswersMappings()); }
         }
 
         /// <summary>
         /// Gets or sets a value indicating whether question is selected
         /// </summary>
         public abstract bool IsSelected { get; set; }
+
+        /// <summary>
+        /// Gets value indicating whether question is valid (i.e. contains valid child elements)
+        /// </summary>
+        public abstract bool IsValid { get; }
 
         /// <summary>
         /// Gets or sets the question orientation

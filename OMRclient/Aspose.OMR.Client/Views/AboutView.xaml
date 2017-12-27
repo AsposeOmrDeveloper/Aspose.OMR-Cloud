@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
         Title="About" Height="250" Width="400"
-        Icon="/Icons/Polling.png">
+        Icon="/OMR.ico">
     
     <Grid>
         <Grid.ColumnDefinitions>
@@ -15,7 +15,8 @@
             <ColumnDefinition Width="3*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="5*"></RowDefinition>
+            <RowDefinition Height="4.5*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
@@ -33,7 +34,7 @@
         
         <TextBlock Grid.Row="2" Grid.Column="1" Margin="5"> 
             <Hyperlink 
-                NavigateUri="https://docs.aspose.cloud/display/omrcloud/Creating+OMR+Template+And+Extrating+Data"
+                NavigateUri="https://docs.aspose.cloud/display/omrcloud/Creating+OMR+Template+and+Extracting+Data"
                 RequestNavigate="OnRequestNavigate"
                 >Client Quickstart Guide</Hyperlink>
         </TextBlock>
@@ -43,6 +44,13 @@
                 NavigateUri="https://www.aspose.cloud/products/omr/cloud"
                 RequestNavigate="OnRequestNavigate"
             >OMR Cloud Product Page</Hyperlink>
+        </TextBlock>
+
+        <TextBlock Grid.Row="4" Grid.Column="1" Margin="5"> 
+            <Hyperlink 
+                NavigateUri="https://github.com/asposecloud/Aspose.OMR-Cloud"
+                RequestNavigate="OnRequestNavigate"
+            >OMR GitHub Page</Hyperlink>
         </TextBlock>
     </Grid>
 </Window>

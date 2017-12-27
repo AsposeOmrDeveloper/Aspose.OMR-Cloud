@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,8 @@ namespace Aspose.OMR.Client.Utility
     /// </summary>
     public static class UserSettingsUtility
     {
+        #region CustomMappings
+
         /// <summary>
         /// Save custom mappings to settings
         /// </summary>
@@ -78,6 +80,51 @@ namespace Aspose.OMR.Client.Utility
             return customMappingDictionary;
         }
 
+        #endregion
+
+        #region RecentFiles
+
+        /// <summary>
+        /// Save recent files list
+        /// </summary>
+        /// <param name="recentFiles">Paths to recently opened templates</param>
+        public static void SaveRecentFiles(string[] recentFiles)
+        {
+            StringCollection collectionToSave = new StringCollection();
+
+            foreach (string recentFile in recentFiles)
+            {
+                collectionToSave.Add(recentFile);
+            }
+
+            Properties.Settings.Default.RecentFiles = collectionToSave;
+            Properties.Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// Loads recent files from settings
+        /// </summary>
+        /// <returns>List of paths to recently opened templates</returns>
+        public static List<string> LoadRecentFiles()
+        {
+            List<string> recentFilesList = new List<string>();
+
+            StringCollection recentFilesCollection = Properties.Settings.Default.RecentFiles;
+            if (recentFilesCollection != null)
+            {
+                foreach (string entry in recentFilesCollection)
+                {
+                    recentFilesList.Add(entry);
+                }
+            }
+
+            return recentFilesList;
+        }
+
+        #endregion
+
+        #region CloudKeys
+
         /// <summary>
         /// Saves app key and app sid
         /// </summary>
@@ -121,6 +168,53 @@ namespace Aspose.OMR.Client.Utility
             }
 
             return null;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Save preprocessing config dictionary to user settings
+        /// </summary>
+        /// <param name="configs">Config to save</param>
+        public static void SavePreprocessingConfigs(Dictionary<string, string> configs)
+        {
+            StringCollection collectionToSave = new StringCollection();
+
+            foreach (var entry in configs)
+            {
+                var delimiter = "|";
+                StringBuilder builder = new StringBuilder();
+                builder.Append(entry.Key + delimiter + entry.Value);
+
+                collectionToSave.Add(builder.ToString());
+            }
+
+            // save mapping
+            Properties.Settings.Default.PreprocessingConfigs = collectionToSave;
+            Properties.Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// Load preprocessing config dictionary from user settings
+        /// </summary>
+        /// <returns>Loaded preprocessing config dictionary</returns>
+        public static Dictionary<string, string> LoadPreprocessingConfigs()
+        {
+            var configs = new Dictionary<string, string>();
+
+            // get mappings from settings
+            StringCollection configsCollection = Properties.Settings.Default.PreprocessingConfigs;
+
+            if (configsCollection != null)
+            {
+                foreach (string entry in configsCollection)
+                {
+                    string[] config = entry.Split('|');
+                    configs.Add(config[0], config[1]);
+                }
+            }
+
+            return configs;
         }
     }
 }

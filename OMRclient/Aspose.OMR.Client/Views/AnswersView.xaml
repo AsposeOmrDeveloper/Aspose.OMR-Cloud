@@ -8,7 +8,7 @@
     <Grid>
         <DataGrid ItemsSource="{Binding RecognitionResults}" AutoGenerateColumns="False" 
                   CanUserSortColumns="False" CanUserDeleteRows="False" CanUserAddRows="False"
-                  SelectionMode="Single" ColumnWidth="*" MinColumnWidth="50">
+                  SelectionMode="Single" ColumnWidth="*" MinColumnWidth="50" Background="White">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Question" Binding="{Binding QuestionName}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="Answer" Binding="{Binding AnswerKey}"></DataGridTextColumn>

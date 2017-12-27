@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,11 +33,10 @@ namespace Aspose.OMR.Client
         /// Serializes template into JSON string
         /// </summary>
         /// <param name="template">Template view model</param>
-        /// <param name="isLocalSave">Indicates whether template is saved locally</param>
         /// <returns>JSON string</returns>
-        public static string TemplateToJson(TemplateViewModel template, bool isLocalSave)
+        public static string TemplateToJson(TemplateViewModel template)
         {
-            OmrTemplate templateModel = TemplateConverter.ConvertViewModelToModel(template, isLocalSave);
+            OmrTemplate templateModel = TemplateConverter.ConvertViewModelToModel(template);
 
             string res;
             using (MemoryStream jsonStream = new MemoryStream())
@@ -163,33 +162,6 @@ namespace Aspose.OMR.Client
             }
 
             return imageData;
-        }
-
-        /// <summary>
-        /// Check provided image size and compress image to byte array
-        /// </summary>
-        /// <param name="templateImage">Template image</param>
-        /// <param name="imageSizeInBytes">Image size in bytes</param>
-        /// <returns>Image data</returns>
-        public static byte[] CompressImage(BitmapImage templateImage, long imageSizeInBytes)
-        {
-            int compressionQuality = 100;
-
-            // if image is larger than 500KB
-            if (imageSizeInBytes > 1024 * 500)
-            {
-                compressionQuality = 90;
-            }
-
-            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-            encoder.QualityLevel = compressionQuality;
-
-            encoder.Frames.Add(BitmapFrame.Create(templateImage));
-            using (MemoryStream ms = new MemoryStream())
-            {
-                encoder.Save(ms);
-                return ms.ToArray();
-            }
         }
 
         /// <summary>

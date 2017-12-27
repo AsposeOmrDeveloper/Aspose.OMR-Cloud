@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,19 +66,39 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         /// <param name="tabName">The tab name string</param>
         /// <param name="templateId">Id of template used for recognition</param>
-        public ResultsViewModel(string tabName, string templateId)
+        /// <param name="isGenerated">Indicates if template was generated</param>
+        public ResultsViewModel(string tabName, string templateId, bool isGenerated)
         {
             this.templateId = templateId;
             this.TabName = tabName;
 
+            this.IsGeneratedTemplate = isGenerated;
             this.PreviewImages = new ObservableCollection<ImagePreviewViewModel>();
             this.InitialPreviewPanelVisibility = Visibility.Visible;
 
+            if (PreprocessingConfigurationManager.CheckConfigExists(this.templateId))
+            {
+                this.SelectedPreprocessingConfiguration =
+                    PreprocessingConfiguration.Deserialize(
+                        PreprocessingConfigurationManager.GetConfigByKey(this.templateId));
+            }
+
+            this.PresetShown = false;
             ZoomKoefficient = 1;
             this.zoomLevel = 1;
 
             this.InitCommands();
         }
+
+        /// <summary>
+        /// Gets or sets the selected image preprocessing configuration
+        /// </summary>
+        public PreprocessingConfiguration SelectedPreprocessingConfiguration { get; set; }
+
+        /// <summary>
+        /// Gets or sets value indicating whether template was generated
+        /// </summary>
+        public bool IsGeneratedTemplate { get; set; }
 
         /// <summary>
         /// Gets or sets zoom koefficient for better representation of large images (values from 0 to 1)
@@ -185,6 +205,11 @@ namespace Aspose.OMR.Client.ViewModels
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether presets view has already been shown to the user
+        /// </summary>
+        public bool PresetShown { get; private set; }
+
         #region Commands
 
         public RelayCommand LoadImagesCommand { get; private set; }
@@ -217,6 +242,10 @@ namespace Aspose.OMR.Client.ViewModels
 
         public RelayCommand ExportDataCommand { get; private set; }
 
+        public RelayCommand ExportAllCommand { get; private set; }
+
+        public RelayCommand ShowPresetsCommand { get; private set; }
+
         #endregion
 
         /// <summary>
@@ -248,6 +277,26 @@ namespace Aspose.OMR.Client.ViewModels
             this.CancelSelectedCommand = new RelayCommand(x => this.CancelSelectedImageRecognition((ImagePreviewViewModel) x));
 
             this.ExportDataCommand = new RelayCommand(x => this.OnExportData(), x => this.RecognitionResults != null);
+            this.ExportAllCommand = new RelayCommand(x => this.OnExportAllData(), x => this.RecognitionResults != null);
+
+            this.ShowPresetsCommand = new RelayCommand(x => this.OnShowPresets());
+        }
+
+        /// <summary>
+        /// Display preset settings and update configuration after view closed
+        /// </summary>
+        private void OnShowPresets()
+        {
+            PreprocessingPresetsViewModel viewModel = new PreprocessingPresetsViewModel(this.IsGeneratedTemplate,
+                this.SelectedPreprocessingConfiguration);
+
+            if (viewModel.Configuration != null)
+            {
+                this.SelectedPreprocessingConfiguration = viewModel.Configuration;
+
+                PreprocessingConfigurationManager.AddConfig(this.templateId,
+                    PreprocessingConfiguration.Serialize(this.SelectedPreprocessingConfiguration));
+            }
         }
 
         /// <summary>
@@ -325,11 +374,7 @@ namespace Aspose.OMR.Client.ViewModels
 
         private void LoadImagesFromFolderByPath(string path)
         {
-            var files = Directory.EnumerateFiles(path, "*.*", SearchOption.TopDirectoryOnly)
-                .Where(x => GlobalConstants.SupportedImageFormats.Contains(Path.GetExtension(x))
-                )
-                .ToArray();
-
+            var files = DialogManager.GetImageFilesFromDirectory(path).ToArray();
             this.LoadPreviewImages(files);
         }
 
@@ -378,7 +423,7 @@ namespace Aspose.OMR.Client.ViewModels
                 newItem.ImageFileFormat = fileInfo.Extension;
                 this.PreviewImages.Add(newItem);
             }
-            
+
             this.InitialPreviewPanelVisibility = Visibility.Collapsed;
             this.SelectedPreviewImage = this.PreviewImages.First();
         }
@@ -388,6 +433,12 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         private void RecognizeAllImages()
         {
+            if (!this.PresetShown)
+            {
+                this.OnShowPresets();
+                this.PresetShown = true;
+            }
+
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += (sender, args) =>
             {
@@ -427,6 +478,12 @@ namespace Aspose.OMR.Client.ViewModels
         /// <param name="imagePreview">Item to recognize</param>
         private void RecognizeSelectedImage(ImagePreviewViewModel imagePreview)
         {
+            if (!this.PresetShown)
+            {
+                this.OnShowPresets();
+                this.PresetShown = true;
+            }
+
             var itemToProcess = imagePreview ?? this.SelectedPreviewImage;
 
             BackgroundWorker worker = new BackgroundWorker();
@@ -465,14 +522,16 @@ namespace Aspose.OMR.Client.ViewModels
             itemToProcess.CanCancel = false;
             itemToProcess.StatusText = "Preparing for dispatch...";
 
-            var image = new BitmapImage(new Uri("file://" + itemToProcess.PathToImage));
+            if (!File.Exists(itemToProcess.PathToImage))
+            {
+                DialogManager.ShowErrorDialog("Could not find image " + "\"" + itemToProcess.PathToImage + "\".");
+                return;
+            }
 
-            byte[] imageData = TemplateSerializer.CompressImage(image, itemToProcess.ImageSizeInBytes);
-            //string imageData = TemplateConverter.CheckAndCompressImage(image, itemToProcess.ImageFileFormat, itemToProcess.ImageSizeInBytes);
-
+            byte[] imageData = this.PreprocessImage(itemToProcess.PathToImage, this.SelectedPreprocessingConfiguration);
             string additionalPars = string.Empty;
 
-            itemToProcess.StatusText = "Core processing...";
+            itemToProcess.StatusText = "Performing Recognition...";
 
             try
             {
@@ -500,7 +559,37 @@ namespace Aspose.OMR.Client.ViewModels
                 itemToProcess.StatusText = string.Empty;
                 itemToProcess.CanCancel = true;
 
-                DialogManager.ShowErrorDialog(e.Message);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    DialogManager.ShowErrorDialog(e.Message);
+                });
+            }
+        }
+
+        /// <summary>
+        /// Preprocess image according to selected configuration
+        /// </summary>
+        /// <param name="pathToImage">Path to the image</param>
+        /// <param name="config">Preprocessing configuration</param>
+        /// <returns>Preprocessed image data</returns>
+        private byte[] PreprocessImage(string pathToImage, PreprocessingConfiguration config)
+        {
+            long fileLengthKb = new FileInfo(pathToImage).Length / 1024;
+
+            // if preprocessing enabled and image size is bigger then threshold preprocess
+            if (config.IsPreprocessingEnabled && fileLengthKb > config.ExcludeImagesSize)
+            {
+                byte[] imageData = ImageProcessor.CompressAndResizeImage(pathToImage, config.JpegCompressionLevel,
+                    config.DesiredWidth, config.DesiredHeight);
+
+                return imageData;
+            }
+            // simply pack data without resize
+            else
+            {
+                BitmapImage image = new BitmapImage(new Uri("file://" + pathToImage));
+                byte[] imageData = ImageProcessor.CompressImage(image, 0);
+                return imageData;
             }
         }
 
@@ -531,6 +620,27 @@ namespace Aspose.OMR.Client.ViewModels
         }
 
         /// <summary>
+        /// Export all data from all recognized images (seprate file for each image)
+        /// </summary>
+        private void OnExportAllData()
+        {
+            string path = DialogManager.ShowSaveDataFolderDialog();
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            foreach (ImagePreviewViewModel imagePreviewViewModel in this.PreviewImages)
+            {
+                string savePath = path + @"\" + Path.GetFileNameWithoutExtension(imagePreviewViewModel.Title) + ".csv";
+                if (imagePreviewViewModel.IsProcessed && imagePreviewViewModel.RecognitionResults != null)
+                {
+                    this.ExportFileRoutine(savePath, imagePreviewViewModel.RecognitionResults);
+                }
+            }
+        }
+
+        /// <summary>
         /// Saves recognition results of selected image to .csv format by specified path
         /// </summary>
         private void OnExportData()
@@ -541,6 +651,16 @@ namespace Aspose.OMR.Client.ViewModels
                 return;
             }
 
+            this.ExportFileRoutine(path, this.RecognitionResults);
+        }
+
+        /// <summary>
+        /// Perform export of provided data to specified path
+        /// </summary>
+        /// <param name="savePath">Export path</param>
+        /// <param name="resultsToExport">Results to export</param>
+        private void ExportFileRoutine(string savePath, ObservableCollection<RecognitionResult> resultsToExport)
+        {
             StringBuilder csv = new StringBuilder();
 
             // char to use as separator in CSV file, differs depending on CurrentCulture
@@ -549,7 +669,7 @@ namespace Aspose.OMR.Client.ViewModels
             csv.Append("Element Name").Append(separator);
             csv.Append("Value").AppendLine(separator);
 
-            foreach (RecognitionResult result in this.RecognitionResults)
+            foreach (RecognitionResult result in resultsToExport)
             {
                 csv.Append(result.QuestionName);
                 csv.Append(separator);
@@ -558,7 +678,7 @@ namespace Aspose.OMR.Client.ViewModels
 
             try
             {
-                File.WriteAllText(path, csv.ToString());
+                File.WriteAllText(savePath, csv.ToString());
             }
             catch (Exception e)
             {

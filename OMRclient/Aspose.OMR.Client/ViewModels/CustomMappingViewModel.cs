@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,6 +56,7 @@ namespace Aspose.OMR.Client.ViewModels
 
             // add default values
             this.customMappingItemsCount = 4;
+            this.CustomMappingAdded = false;
 
             this.MappingValues = new ObservableCollection<StringWrapper>();
             this.MappingValues.Add(new StringWrapper("A"));
@@ -79,6 +80,11 @@ namespace Aspose.OMR.Client.ViewModels
                 this.OnPropertyChanged();
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether custom mapping was added
+        /// </summary>
+        public bool CustomMappingAdded { get; set; }
 
         /// <summary>
         /// Gets or sets mapping values count
@@ -138,6 +144,7 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         private void OnCancelCommand()
         {
+            this.CustomMappingAdded = false;
             this.view.Close();
         }
 
@@ -163,6 +170,7 @@ namespace Aspose.OMR.Client.ViewModels
             string[] resArray = this.MappingValues.Select(x => x.StringValue).ToArray();
             AnswersMappingHelper.AddCustomMapping(this.CustomMappingName, resArray);
 
+            this.CustomMappingAdded = true;
             this.view.Close();
         }
     }

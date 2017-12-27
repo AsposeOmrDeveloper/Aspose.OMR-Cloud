@@ -48,6 +48,7 @@
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
@@ -74,6 +75,9 @@
     <Compile Include="Controls\OmrGridElement.cs" />
     <Compile Include="Converters\BoolToOpacityConverter.cs" />
     <Compile Include="Converters\BoolToVisibilityInverseConverter.cs" />
+    <Compile Include="Converters\BoolToWrappingConverter.cs" />
+    <Compile Include="Converters\EnumDescriptionConverter.cs" />
+    <Compile Include="Converters\GridLengthConverter.cs" />
     <Compile Include="Utility\AnswersMappingHelper.cs" />
     <Compile Include="Utility\BusyIndicatorManager.cs" />
     <Compile Include="Controls\BaseOmrElement.cs" />
@@ -96,20 +100,32 @@
     <Compile Include="CoreApi.cs" />
     <Compile Include="Utility\CloudStorageManager.cs" />
     <Compile Include="Utility\DialogManager.cs" />
+    <Compile Include="Utility\EnumExtensions.cs" />
     <Compile Include="Utility\GlobalConstants.cs" />
+    <Compile Include="Utility\HelpManager.cs" />
+    <Compile Include="Utility\ImageProcessor.cs" />
+    <Compile Include="Utility\OmrFunctions.cs" />
+    <Compile Include="Utility\PreprocessingConfiguration.cs" />
+    <Compile Include="Utility\PreprocessingConfigurationManager.cs" />
+    <Compile Include="Utility\PreprocessingPreset.cs" />
+    <Compile Include="Utility\RecentMenuManager.cs" />
     <Compile Include="Utility\SecurityUtility.cs" />
     <Compile Include="Utility\StringWrapper.cs" />
+    <Compile Include="Utility\TemplateCreationStages.cs" />
+    <Compile Include="Utility\TemplateGenerationContent.cs" />
     <Compile Include="Utility\UserSettingsUtility.cs" />
     <Compile Include="ViewModels\BaseQuestionViewModel.cs" />
+    <Compile Include="ViewModels\CorrectionErrorsViewModel.cs" />
     <Compile Include="ViewModels\CredentialsViewModel.cs" />
     <Compile Include="ViewModels\CustomMappingViewModel.cs" />
     <Compile Include="ViewModels\FinalizationResultsViewModel.cs" />
     <Compile Include="ViewModels\GridViewModel.cs" />
+    <Compile Include="ViewModels\GroupRenameViewModel.cs" />
     <Compile Include="ViewModels\ImagePreviewViewModel.cs" />
     <Compile Include="Utility\NamingManager.cs" />
     <Compile Include="RecognitionResult.cs" />
     <Compile Include="Utility\RelayCommand.cs" />
-    <Compile Include="SelectionRectnagleModes.cs" />
+    <Compile Include="Utility\SelectionRectangleModes.cs" />
     <Compile Include="TemplateConverter.cs" />
     <Compile Include="TemplateSerializer.cs" />
     <Compile Include="UndoRedo\ActionTracker.cs" />
@@ -124,8 +140,10 @@
     </Compile>
     <Compile Include="ViewModels\ChoiceBoxViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\PreprocessingPresetsViewModel.cs" />
     <Compile Include="ViewModels\ResultsViewModel.cs" />
     <Compile Include="ViewModels\TabViewModel.cs" />
+    <Compile Include="ViewModels\TemplateGeneratorViewModel.cs" />
     <Compile Include="ViewModels\TemplateViewModel.cs">
       <ExcludeFromStyleCop>False</ExcludeFromStyleCop>
     </Compile>
@@ -139,6 +157,9 @@
     <Compile Include="Views\CommonPropertiesView.xaml.cs">
       <DependentUpon>CommonPropertiesView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\CorrectionErrorsView.xaml.cs">
+      <DependentUpon>CorrectionErrorsView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\CredentialsView.xaml.cs">
       <DependentUpon>CredentialsView.xaml</DependentUpon>
     </Compile>
@@ -151,6 +172,9 @@
     <Compile Include="Views\GridPropertiesView.xaml.cs">
       <DependentUpon>GridPropertiesView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\GroupRenameView.xaml.cs">
+      <DependentUpon>GroupRenameView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ImagesPreview.xaml.cs">
       <DependentUpon>ImagesPreview.xaml</DependentUpon>
     </Compile>
@@ -160,11 +184,17 @@
     <Compile Include="Views\ChoiceBoxPropertiesView.xaml.cs">
       <DependentUpon>ChoiceBoxPropertiesView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\PreprocessingPresetsView.xaml.cs">
+      <DependentUpon>PreprocessingPresetsView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ResultsToolbarView.xaml.cs">
       <DependentUpon>ResultsToolbarView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ResultsView.xaml.cs">
       <DependentUpon>ResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\TemplateGeneratorView.xaml.cs">
+      <DependentUpon>TemplateGeneratorView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\TemplateToolbarView.xaml.cs">
       <DependentUpon>TemplateToolbarView.xaml</DependentUpon>
@@ -192,6 +222,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\CorrectionErrorsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\CredentialsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -205,6 +239,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\GridPropertiesView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\GroupRenameView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -232,11 +270,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\PreprocessingPresetsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\ResultsToolbarView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ResultsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\TemplateGeneratorView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -264,6 +310,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Resource Include="Icons\DeleteCrossIcon.ico" />
+    <Resource Include="Icons\Generate.png" />
+    <Resource Include="Icons\Info32.png" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -409,6 +458,9 @@
     <Content Include="Examples\AsposeTestExamples\FilledForm3.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Gifs\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

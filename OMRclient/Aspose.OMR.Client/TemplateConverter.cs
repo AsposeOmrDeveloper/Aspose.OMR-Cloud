@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ namespace Aspose.OMR.Client
     using System.Windows.Media.Imaging;
     using TemplateModel;
     using ViewModels;
-    using Utility;
 
     /// <summary>
     /// Converts view model template to data model and back
@@ -30,26 +29,20 @@ namespace Aspose.OMR.Client
         /// Converts template view model to template model
         /// </summary>
         /// <param name="templateViewModel">TemplateViewModel to convert</param>
-        /// <param name="saveImage">Flag to save image data</param>
         /// <returns>Resulting template</returns>
-        public static OmrTemplate ConvertViewModelToModel(TemplateViewModel templateViewModel, bool saveImage)
+        public static OmrTemplate ConvertViewModelToModel(TemplateViewModel templateViewModel)
         {
             OmrTemplate template = new OmrTemplate();
             template.TemplateId = templateViewModel.TemplateId;
             template.FinalizationComplete = templateViewModel.FinalizationComplete;
+            template.Name = templateViewModel.TemplateName;
+            template.IsGenerated = templateViewModel.IsGeneratedTemplate;
 
             OmrPage page = template.AddPage();
             page.Height = templateViewModel.PageHeight;
             page.Width = templateViewModel.PageWidth;
             page.ImageName = templateViewModel.TemplateImageName;
             page.ImageFormat = templateViewModel.ImageFileFormat;
-
-            if (saveImage)
-            {
-                page.ImageData = CheckAndCompressImage(templateViewModel.TemplateImage,
-                    templateViewModel.ImageFileFormat,
-                    templateViewModel.ImageSizeInBytes);
-            }
 
             foreach (BaseQuestionViewModel element in templateViewModel.PageQuestions)
             {
@@ -73,13 +66,16 @@ namespace Aspose.OMR.Client
         /// <returns>Resulting TemplateViewModel</returns>
         public static TemplateViewModel ConvertModelToViewModel(OmrTemplate template)
         {
-            TemplateViewModel templateViewModel = new TemplateViewModel("Loaded template");
-            templateViewModel.TemplateId = template.TemplateId;
-            templateViewModel.FinalizationComplete = template.FinalizationComplete;
+            TemplateViewModel templateViewModel = new TemplateViewModel(template.FinalizationComplete, template.TemplateId);
+            templateViewModel.TemplateName = template.Name;
+            templateViewModel.IsGeneratedTemplate = template.IsGenerated;
 
             OmrPage page = template.Pages[0];
             templateViewModel.TemplateImageName = page.ImageName;
             templateViewModel.ImageFileFormat = page.ImageFormat;
+
+            templateViewModel.PageWidth = page.Width;
+            templateViewModel.PageHeight = page.Height;
 
             List<BaseQuestionViewModel> elements = new List<BaseQuestionViewModel>();
 
@@ -99,29 +95,7 @@ namespace Aspose.OMR.Client
 
             templateViewModel.AddQuestions(elements);
 
-            if (page.ImageData != null)
-            {
-                // loading from file
-                double monitorWidth, monitorHeight;
-                ResolutionUtility.GetMonitorResolution(out monitorWidth, out monitorHeight);
-
-                var image = TemplateSerializer.DecompressImage(page.ImageData);
-
-                templateViewModel.TemplateImage = image;
-                templateViewModel.PageWidth = page.Width;
-                templateViewModel.PageHeight = page.Height;
-
-                TemplateViewModel.ZoomKoefficient = image.PixelWidth / page.Width < 1
-                    ? image.PixelWidth / page.Width
-                    : 1;
-            }
-            else
-            {
-                // processing server response
-                templateViewModel.PageWidth = page.Width;
-                templateViewModel.PageHeight = page.Height;
-            }
-
+            templateViewModel.IsDirty = false;
             return templateViewModel;
         }
 

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -125,6 +125,14 @@ namespace Aspose.OMR.Client.ViewModels
 
                 this.OnPropertyChanged();
             }
+        }
+
+        /// <summary>
+        /// Gets value indicating whether question is valid (i.e. contains valid bubbles)
+        /// </summary>
+        public override bool IsValid
+        {
+            get { return this.Bubbles.All(x => x.IsValid); }
         }
 
         /// <summary>
@@ -258,14 +266,20 @@ namespace Aspose.OMR.Client.ViewModels
         /// </summary>
         private void OnAddCustomMapping()
         {
-            new CustomMappingViewModel();
+            CustomMappingViewModel vm = new CustomMappingViewModel();
 
-            var newItem = AnswersMappingHelper.GetAnswersMappings()
-                .FirstOrDefault(x => !this.AnswersMapping.Contains(x));
+            if (!vm.CustomMappingAdded)
+            {
+                return;
+            }
+
+            this.OnPropertyChanged(nameof(this.AnswersMapping));
+
+            string newItem = AnswersMappingHelper.GetAnswersMappings()
+                .FirstOrDefault(x => x.Equals(vm.CustomMappingName));
 
             if (newItem != null)
             {
-                this.AnswersMapping.Insert(0, newItem);
                 this.SelectedMapping = newItem;
             }
         }
@@ -281,7 +295,6 @@ namespace Aspose.OMR.Client.ViewModels
         private void InitializeValues(string name, double top, double left, double width, double height)
         {
             this.Bubbles = new ObservableCollection<BubbleViewModel>();
-            this.AnswersMapping = new ObservableCollection<string>(AnswersMappingHelper.GetAnswersMappings());
 
             this.Name = name;
             this.Top = top;

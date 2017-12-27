@@ -60,12 +60,17 @@
         </controls:NumericTextBox>
 
         <TextBlock Grid.Row="3" Grid.Column="0">Orientation</TextBlock>
-        <ComboBox Grid.Row="3" Grid.Column="1" Margin="3" ItemsSource="{Binding Source={controls:EnumBindingSource {x:Type templateModel:Orientations}}}" SelectedItem="{Binding Orientation}"/>
+        <ComboBox Grid.Row="3" Grid.Column="1" Margin="3" 
+                  ItemsSource="{Binding Source={controls:EnumBindingSource {x:Type templateModel:Orientations}}}" SelectedItem="{Binding Orientation}"
+                  Style="{StaticResource {x:Static ToolBar.ComboBoxStyleKey}}" HorizontalAlignment="Stretch"/>
         
         <TextBlock Grid.Row="4" Grid.Column="0">Answers Mapping</TextBlock>
-        <ComboBox Grid.Row="4" Grid.Column="1" Margin="3" ItemsSource="{Binding AnswersMapping}" SelectedItem="{Binding SelectedMapping}"/>
+        <ComboBox Grid.Row="4" Grid.Column="1" Margin="3" 
+                  ItemsSource="{Binding AnswersMapping}" SelectedItem="{Binding SelectedMapping}"
+                  Style="{StaticResource {x:Static ToolBar.ComboBoxStyleKey}}" HorizontalAlignment="Stretch"/>
         
-        <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="Add Custom Mapping..." Margin="3" Command="{Binding AddCustomMappingCommand}"></Button>
+        <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="Add Custom Mapping..." Margin="3" 
+                Command="{Binding AddCustomMappingCommand}" Style="{StaticResource ImageButton}"/>
 
         <TextBlock Grid.Row="6" Grid.Column="0">Width</TextBlock>
         <controls:NumericTextBox Grid.Row="6" Grid.Column="1" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"

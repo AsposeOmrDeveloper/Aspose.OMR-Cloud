@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,11 @@ namespace Aspose.OMR.Client.ViewModels
         private bool isSelected;
 
         /// <summary>
+        /// Indicates whether template has unsaved changes
+        /// </summary>
+        private bool isDirty;
+
+        /// <summary>
         /// Gets or sets command to remove selected element in tab
         /// </summary>
         public RelayCommand RemoveElementCommand { get; protected set; }
@@ -47,6 +52,19 @@ namespace Aspose.OMR.Client.ViewModels
             set
             {
                 this.tabName = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether tab has any unsaved changes
+        /// </summary>
+        public bool IsDirty
+        {
+            get { return this.isDirty; }
+            set
+            {
+                this.isDirty = value;
                 this.OnPropertyChanged();
             }
         }

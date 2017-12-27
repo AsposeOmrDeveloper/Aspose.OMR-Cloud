@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       https://github.com/aspose-omr/Aspose.OMR-for-Cloud/blob/master/LICENSE
+ *       https://github.com/asposecloud/Aspose.OMR-Cloud/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,7 @@
  */
 namespace Aspose.OMR.Client.Views
 {
+    using System.Linq;
     using System.Windows;
     using ViewModels;
 
@@ -27,6 +28,7 @@ namespace Aspose.OMR.Client.Views
         {
             this.InitializeComponent();
             this.DataContext = context;
+            this.Owner = Application.Current.Windows.OfType<MainWindow>().First();
         }
     }
 }

@@ -6,10 +6,12 @@
              xmlns:controls="clr-namespace:Aspose.OMR.Client.Controls"
              xmlns:views="clr-namespace:Aspose.OMR.Client.Views"
              xmlns:viewModels="clr-namespace:Aspose.OMR.Client.ViewModels"
+             xmlns:converters="clr-namespace:Aspose.OMR.Client.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="800">
     
     <UserControl.Resources>
+        <converters:GridLengthConverter x:Key="LengthConverter"></converters:GridLengthConverter>
     </UserControl.Resources>
     
     <Grid>
@@ -21,7 +23,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="360"/>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="220" MinWidth="140" MaxWidth="400"/>
+            <ColumnDefinition Width="{Binding Path=PropertiesPanelWidth, Mode=TwoWay, Converter={StaticResource LengthConverter}}" MinWidth="24" MaxWidth="400"/>
         </Grid.ColumnDefinitions>
 
         <!--Main area-->
@@ -140,16 +142,21 @@
         </ScrollViewer>
 
         <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"  BorderThickness="2" BorderBrush="{StaticResource MainItemsBrush}"
-                      HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                      HorizontalAlignment="Center" VerticalAlignment="Stretch" Visibility="{Binding ShowPropertiesPanel,Converter={converters:BoolToVisibilityConverter}}"
                       Background="Transparent" Width="5"/>
 
         <!--Element Properties-->
-        <DockPanel Grid.Row="0" Grid.Column="2" Background="White">
-            <Grid DockPanel.Dock="Top" Background="White" Margin="2">
-                <Border BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2">
+        <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Background="White"
+                   Visibility="{Binding ShowPropertiesPanel, Converter={converters:BoolToVisibilityConverter}}">
+            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2" Margin="2">
+                <Grid Background="White">
                     <TextBlock Margin="2" Text="Question Properties" HorizontalAlignment="Center" FontSize="14"/>
-                </Border>
-            </Grid>
+                    <Button Content="X"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Width="20" Style="{StaticResource ImageButton}"
+                            Command="{Binding HidePropertiesCommand}"></Button>
+                </Grid>
+            </Border>
 
             <ContentControl DataContext="{Binding PropertiesContext}" Content="{Binding}" >
                 <ContentControl.Resources>
@@ -163,37 +170,42 @@
             </ContentControl>
         </DockPanel>
 
-        <!--Warnings-->
-        <DockPanel Grid.Row="1" Grid.Column="2" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
-            <Grid DockPanel.Dock="Top" Background="White" Margin="2">
-                <Border BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2">
-                    <TextBlock Margin="2" Text="Warnings" HorizontalAlignment="Center" FontSize="14"/>
-                </Border>
-            </Grid>
-            <ListBox ItemsSource="{Binding Warnings}" Background="White" BorderThickness="0">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </DockPanel>
-        
+        <Grid x:Name="PropertiesPan" Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Background="White"
+              Visibility="{Binding ShowPropertiesPanel, Converter={converters:BoolToVisibilityInverseConverter}}" >
+            <Button x:Name="ShowPropertiesEditorButton" Height="24" Width="64" VerticalAlignment="Top" 
+                    Style="{StaticResource ImageButton}" Command="{Binding ShowPropertiesCommand}"
+                    Content="Properties">
+                <Button.LayoutTransform>
+                    <RotateTransform Angle="90" />
+                </Button.LayoutTransform>
+            </Button>
+        </Grid>
+
         <!--lower toolbar-->
         <Border Margin="0,3,0,0" BorderBrush="{StaticResource MainItemsBrush}" BorderThickness="2" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-            <DockPanel>
-                <ToolBarTray DockPanel.Dock="Bottom" IsLocked="True">
-                    <ToolBar BandIndex="1">
-                        <Button Content="Out" Command="{Binding ZoomOutCommand}" Margin="5,0,5,0"/>
+            <Grid Background="White">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.55*"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Image Source="/Icons/Info32.png" Margin="3"/>
+                    
+                    <TextBlock x:Name="HelpTextBlock" Text="{Binding HelpMessage, UpdateSourceTrigger=PropertyChanged}"
+                               Margin="5,0,5,0" VerticalAlignment="Center" TextWrapping="WrapWithOverflow"></TextBlock>
+                </StackPanel>
+                
+                <ToolBarTray Grid.Column="1" DockPanel.Dock="Bottom" IsLocked="True" HorizontalAlignment="Right" VerticalAlignment="Center" Background="White">
+                    <ToolBar>
+                        <Button Content="Out" Command="{Binding ZoomOutCommand}" Margin="5,0,5,0" ToolTip="Zoom Out"/>
 
                         <Slider x:Name="Slider"
                                 Orientation="Horizontal" Width="100" 
                                 Minimum="0.1" Maximum="4" Value="{Binding ZoomLevel}" 
                                 SmallChange="0.1" LargeChange="0.2"/>
 
-                        <Button Content="In" Command="{Binding ZoomInCommand}" Margin="5,0,5,0"/>
+                        <Button Content="In" Command="{Binding ZoomInCommand}" Margin="5,0,5,0" ToolTip="Zoom In"/>
 
                         <TextBlock Margin="5,0,5,0" Width="30" Text="{Binding PageScaleDisplayString}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
@@ -202,37 +214,13 @@
                         <Button Click="OnFitPageWidth" ToolTip="Fit Page Width" ToolTipService.ShowOnDisabled="True">
                             <Image Source="/Icons/FitWidth.png" />
                         </Button>
-                        
+
                         <Button Click="OnFitPageHeight" ToolTip="Fit Whole Page" ToolTipService.ShowOnDisabled="True">
                             <Image Source="/Icons/FullScreen.png" />
                         </Button>
                     </ToolBar>
-                    
-                    <ToolBar BandIndex="2">
-                        <Button Command="{Binding AlignLeftCommand}" ToolTip="Align Left" Style="{StaticResource ImageButton}" Margin="0,0,5,0">
-                            <Image Source="/Icons/AlignLeft.png" />
-                        </Button>
-                        <Button Command="{Binding AlignRightCommand}" ToolTip="Align Right" Style="{StaticResource ImageButton}" Margin="0,0,5,0">
-                            <Image Source="/Icons/AlignRight.png" />
-                        </Button>
-                        <Button Command="{Binding AlignTopCommand}" ToolTip="Align Top" Style="{StaticResource ImageButton}" Margin="0,0,5,0">
-                            <Image Source="/Icons/AlignTop.png" />
-                        </Button>
-                        <Button Command="{Binding AlignBottomCommand}" ToolTip="Align Bottom" Style="{StaticResource ImageButton}">
-                            <Image Source="/Icons/AlignBottom.png" />
-                        </Button>
-                    </ToolBar>
-                    
-                    <ToolBar BandIndex="3">
-                        <Button Content="Apply Formatting" Command="{Binding ApplyFormattingCommand}" Margin="0,0,5,0"></Button>
-                        <Button ToolTip="Shrink question to bubble bounds" Command="{Binding ShrinkElementCommand}" Style="{StaticResource ImageButton}">
-                            <Image Source="/Icons/Shrink.png" />
-                        </Button>
-
-                    </ToolBar>
-
                 </ToolBarTray>
-            </DockPanel>
+            </Grid>
         </Border>
     </Grid>
         
